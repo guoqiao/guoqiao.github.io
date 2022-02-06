@@ -1,0 +1,12 @@
+baseURL: 'https://blog.guoqiao.me'
+title: "guoqiao's blog"
+theme: 'noteworthy'
+languageCode: 'en-us'
+
+enableRobotsTXT: true
+paginate: 10
+summaryLength: 20
+
+params:
+  twitter: https://twitter.com/guoqiao
+  github: https://github.com/guoqiao
