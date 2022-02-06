@@ -1,6 +1,9 @@
 ---
+draft: true
+date: "2022-02-12"
 title: "My Post"
 description: ""
-date: "2022-02-12"
-draft: true
+tags:
+  - "tag1"
+  - "tag2"
 ---
