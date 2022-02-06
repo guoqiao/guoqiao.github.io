@@ -9,7 +9,6 @@ tags:
   - "PostgreSQL"
 ---
 
-We can run Docker containers on Synology NAS with the "docker" package.
 It's common that service in docker container needs a database, such as PostgreSQL.
 
 You can also run database in another docker container and link them together. However, there are reasons not to do that in some senarios.:
@@ -111,10 +110,12 @@ Please note:
 
 The key here is to add `host.docker.internal:host-gateway` as `extra_hosts`, and use `host.docker.internal` as domain name for docker host.
 
-## Issue on NAS
-
-
 ## Summary
 
 With this setup, you can run multiple docker containers with shared services on docker host.
 This is useful for personal server, or home/office network.
+
+## Issue on NAS
+
+My original goal for this topic is to use builtin PostgreSQL on Synology NAS for docker containers.
+However, I noticed the `docker` package has no way to add extra_hosts, so I have to use gateway IP to connect to PostgreSQL for now, which is working but not reliable.
