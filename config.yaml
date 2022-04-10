@@ -6,7 +6,6 @@ languageCode: 'en-us'
 enableRobotsTXT: true
 paginate: 10
 summaryLength: 20
-publishDir: 'docs'
 
 params:
   twitter: https://twitter.com/guoqiao
