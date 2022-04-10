@@ -1,5 +1,5 @@
-baseURL: 'https://blog.guoqiao.me'
-title: "guoqiao's blog"
+baseURL: 'https://guoqiao.me'
+title: "guoqiao's personal website"
 theme: 'noteworthy'
 languageCode: 'en-us'
 
