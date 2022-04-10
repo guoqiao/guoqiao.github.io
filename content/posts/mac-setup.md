@@ -6,8 +6,28 @@ date: "2022-02-06"
 
 Main steps:
 
-- system settings
-- homebrew
-- iTerm2
+## system settings
+
+- dock on left
+- tap to click
+- repeat
+
+## brew
+
+## CLI apps and modern-unix
+
 - oh-my-zsh
-- menu bar
+
+## GUI apps
+
+- iTerm2
+- stats
+- aldente
+- rectangle
+- only-switch
+- autoraise
+
+## menu bar
+
+- stats
+- only-switch
