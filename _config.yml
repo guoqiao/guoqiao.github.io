@@ -2,10 +2,17 @@ baseURL: 'https://guoqiao.github.io'
 title: "guoqiao's personal website"
 theme: 'noteworthy'
 languageCode: 'en-us'
+page_excerpts: true
 
 enableRobotsTXT: true
 paginate: 10
 summaryLength: 20
+
+defaults:
+  - scope:
+      path: "img"
+    values:
+      image: true
 
 params:
   twitter: https://twitter.com/guoqiao
