@@ -10,7 +10,7 @@ summaryLength: 20
 
 defaults:
   - scope:
-      path: "img"
+      path: "assets/img"
     values:
       image: true
 
