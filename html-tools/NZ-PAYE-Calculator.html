@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NZ PAYE Income Tax Calculator</title>
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <!-- Google Fonts: Outfit for a modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4F46E5;
+            /* Indigo 600 */
+            --primary-light: #6366F1;
+            /* Indigo 500 */
+            --secondary: #ec4899;
+            /* Pink 500 */
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: none;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: rgba(241, 245, 249, 0.8);
+            padding: 10px 10px 0 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 12px 12px 0 0;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            background: white;
+            font-weight: 600;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: white;
+            /* Hides the border-bottom of tabs container */
+        }
+
+        /* Tab Content */
+        .tab-content {
+            padding: 30px;
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Section 1: Calculator */
+        .calculator-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper span {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px 15px 15px 35px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #f8fafc;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            background: white;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-label {
+            font-weight: 300;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .result-value {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .result-row:last-child .result-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Tax Brackets */
+        .tax-brackets {
+            margin-top: 30px;
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .tax-brackets h3 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .bracket-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            color: var(--text-muted);
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.95rem;
+        }
+
+        .bracket-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Section 2: Chart */
+        .chart-wrapper {
+            position: relative;
+            height: 80vh;
+            width: 100%;
+        }
+
+        /* Section 3: Table */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8fafc;
+        }
+
+        th {
+            text-align: left;
+            padding: 16px;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+        }
+
+        tr:hover td {
+            background: #f1f5f9;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 600px) {
+            .container {
+                border-radius: 0;
+                height: 100vh;
+                max-height: none;
+            }
+
+            body {
+                padding: 0;
+            }
+
+            .tab-btn {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('calculator')">Calculator</button>
+            <button class="tab-btn" onclick="switchTab('graph')">Graph</button>
+            <button class="tab-btn" onclick="switchTab('table')">Table</button>
+        </div>
+
+        <!-- Tab 1: Calculator -->
+        <div id="calculator" class="tab-content active">
+            <div class="input-group">
+                <label for="income">Annual Income</label>
+                <div class="input-wrapper">
+                    <span>$</span>
+                    <input type="number" id="income" placeholder="Enter annual income" value="70000" min="0" step="500">
+                </div>
+            </div>
+
+            <div class="result-card">
+                <div class="result-row">
+                    <span class="result-label">Gross Income</span>
+                    <span class="result-value" id="incomeDisplay">$70,000</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Total PAYE Tax</span>
+                    <span class="result-value" id="taxDisplay">$11,020</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Effective Tax Rate</span>
+                    <span class="result-value" id="effectiveRateDisplay">15.7%</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Net Income (After Tax)</span>
+                    <span class="result-value" id="afterTaxDisplay">$58,980</span>
+                </div>
+            </div>
+
+            <div class="tax-brackets">
+                <h3>Current Tax Brackets</h3>
+                <div class="bracket-item"><span>$0 - $15,600</span> <span>10.5%</span></div>
+                <div class="bracket-item"><span>$15,601 - $53,500</span> <span>17.5%</span></div>
+                <div class="bracket-item"><span>$53,501 - $78,100</span> <span>30%</span></div>
+                <div class="bracket-item"><span>$78,101 - $180,000</span> <span>33%</span></div>
+                <div class="bracket-item"><span>Over $180,000</span> <span>39%</span></div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Graph -->
+        <div id="graph" class="tab-content">
+            <div class="chart-wrapper">
+                <canvas id="taxChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab 3: Table -->
+        <div id="table" class="tab-content">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Income</th>
+                            <th>Tax</th>
+                            <th>Rate</th>
+                            <th>Net Pay</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taxTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Tab Switching Logic ---
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Remove active class from buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Show selected content
+            document.getElementById(tabId).classList.add('active');
+
+            // Highlight selected button
+            // Finding the button by text content or onclick attribute is tricky,
+            // so we'll just find the button that calls this function with this ID.
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('onclick').includes(tabId)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Special handling for Chart.js: It sometimes doesn't render if initialized while hidden.
+            // Trigger a resize to ensure it fits the container.
+            if (tabId === 'graph' && window.myChart) {
+                window.myChart.resize();
+            }
+        }
+
+        // --- 2. Tax Logic ---
+        const taxBrackets = [
+            { min: 0, max: 15600, rate: 0.105 },
+            { min: 15600, max: 53500, rate: 0.175 },
+            { min: 53500, max: 78100, rate: 0.30 },
+            { min: 78100, max: 180000, rate: 0.33 },
+            { min: 180000, max: Infinity, rate: 0.39 }
+        ];
+
+        function calculateTax(income) {
+            let tax = 0;
+            let remainingIncome = income;
+
+            for (let i = 0; i < taxBrackets.length; i++) {
+                const bracket = taxBrackets[i];
+                const bracketSize = bracket.max - bracket.min;
+
+                if (remainingIncome <= 0) break;
+
+                if (remainingIncome > bracketSize) {
+                    tax += bracketSize * bracket.rate;
+                    remainingIncome -= bracketSize;
+                } else {
+                    tax += remainingIncome * bracket.rate;
+                    remainingIncome = 0;
+                }
+            }
+            return Math.round(tax * 100) / 100;
+        }
+
+        function formatCurrency(amount) {
+            return '$' + amount.toLocaleString('en-NZ', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        function formatPercent(rate) {
+            return (rate * 100).toFixed(1) + '%';
+        }
+
+        // --- 3. Calculator UI Updates ---
+        const incomeInput = document.getElementById('income');
+
+        function updateCalculation() {
+            const income = parseFloat(incomeInput.value) || 0;
+            const tax = calculateTax(income);
+            const afterTax = income - tax;
+            const effectiveRate = income > 0 ? (tax / income) : 0;
+
+            document.getElementById('incomeDisplay').textContent = formatCurrency(income);
+            document.getElementById('taxDisplay').textContent = formatCurrency(tax);
+            document.getElementById('effectiveRateDisplay').textContent = formatPercent(effectiveRate);
+            document.getElementById('afterTaxDisplay').textContent = formatCurrency(afterTax);
+        }
+
+        incomeInput.addEventListener('input', updateCalculation);
+        // Initial Calculation
+        updateCalculation();
+
+
+        // --- 4. Chart.js Implementation ---
+        const ctx = document.getElementById('taxChart').getContext('2d');
+        const rawIncomes = new Set([0, 15600, 53500, 78100, 180000, 300000]);
+        for (let i = 0; i <= 300000; i += 10000) {
+            rawIncomes.add(i);
+        }
+        const incomeValues = Array.from(rawIncomes).sort((a, b) => a - b);
+        const taxValues = [];
+        const netValues = [];
+
+        incomeValues.forEach(i => {
+            const t = calculateTax(i);
+            taxValues.push(t);
+            netValues.push(i - t);
+        });
+
+        window.myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: incomeValues,
+                datasets: [
+                    {
+                        label: 'Net Income',
+                        data: netValues,
+                        borderColor: '#4F46E5', // Indigo/Blue
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Income Tax',
+                        data: taxValues,
+                        borderColor: '#ec4899', // Pink
+                        backgroundColor: 'rgba(236, 72, 153, 0.05)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        padding: 12,
+                        displayColors: false,
+                        titleFont: { family: 'Outfit', size: 14 },
+                        bodyFont: { family: 'Outfit', size: 13 },
+                        callbacks: {
+                            title: () => [],
+                            label: (context) => {
+                                // Only show for one dataset to avoid duplication
+                                if (context.datasetIndex !== 1) return null;
+
+                                const income = incomeValues[context.dataIndex];
+                                const tax = calculateTax(income);
+                                const net = income - tax;
+                                const rate = income > 0 ? (tax / income) : 0;
+                                return [
+                                    'Annual Income: ' + formatCurrency(income),
+                                    'Income Tax: ' + formatCurrency(tax),
+                                    'Net Income: ' + formatCurrency(net),
+                                    'Effective Rate: ' + formatPercent(rate)
+                                ];
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { family: 'Outfit' },
+                            usePointStyle: false,
+                            boxWidth: 40,
+                            boxHeight: 2
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Annual Income',
+                            font: { family: 'Outfit', size: 14, weight: 600 },
+                            color: '#64748b'
+                        },
+                        grid: { display: false },
+                        ticks: {
+                            font: { family: 'Outfit', size: 11 },
+                            maxRotation: 45,
+                            minRotation: 45,
+                            autoSkip: false,
+                            callback: (val, index) => {
+                                const v = incomeValues[index];
+                                const special = [0, 15600, 53500, 78100, 180000, 300000];
+                                return special.includes(v) ? '$' + v.toLocaleString() : '';
+                            }
+                        }
+                    },
+                    y: {
+                        grid: { borderDash: [4, 4], color: '#e2e8f0' },
+                        ticks: {
+                            font: { family: 'Outfit' },
+                            callback: (val) => '$' + val / 1000 + 'k'
+                        }
+                    }
+                }
+            }
+        });
+
+        // --- 5. Reference Table Implementation ---
+        const typicalIncomes = [
+            20000, 30000, 40000, 45000, 50000, 55000, 60000, 65000, 70000,
+            75000, 80000, 90000, 100000, 120000, 150000, 180000, 200000, 250000, 300000
+        ];
+        const tableBody = document.getElementById('taxTable');
+
+        typicalIncomes.forEach(income => {
+            const tax = calculateTax(income);
+            const afterTax = income - tax;
+            const effectiveRate = tax / income;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="font-weight: 500;">${formatCurrency(income)}</td>
+                <td>${formatCurrency(tax)}</td>
+                <td>${formatPercent(effectiveRate)}</td>
+                <td style="color: var(--primary); font-weight: 600;">${formatCurrency(afterTax)}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+    </script>
+</body>
+
+</html>
