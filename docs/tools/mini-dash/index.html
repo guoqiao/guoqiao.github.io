@@ -1,0 +1,2171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <!-- iOS Web App meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="mini Dash" />
+    <!-- Prevent phone number detection -->
+    <meta name="format-detection" content="telephone=no" />
+    <!-- Home screen icon -->
+    <link rel="apple-touch-icon" href="icon.png" />
+    <title>mini Dash</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        /* Prevent elastic scrolling on iOS */
+        overflow: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      body {
+        margin: 0;
+        background: linear-gradient(135deg, #0a0a0f 0%, #0d1117 50%, #0a0a0f 100%);
+        background-color: #0a0a0f;
+        color: #e0f4f4;
+        font-family: "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        align-items: center;
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+        justify-content: center;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+        text-align: center;
+        -webkit-font-smoothing: antialiased;
+        position: relative;
+      }
+
+      #slideshow-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+      }
+
+      #slideshow-background img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        -webkit-transition: opacity 1.5s ease-in-out;
+        transition: opacity 1.5s ease-in-out;
+      }
+
+      #slideshow-background img.active {
+        opacity: 0.5;
+      }
+
+      #slide-nav-left,
+      #slide-nav-right {
+        position: fixed;
+        top: 50%;
+        -webkit-transform: translateY(-50%);
+        transform: translateY(-50%);
+        width: 15vw;
+        height: 40vh;
+        cursor: pointer;
+        z-index: 10;
+        outline: none;
+        -webkit-tap-highlight-color: rgba(0,0,0,0);
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        background: transparent;
+        border: none;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+
+      #slide-nav-left:focus,
+      #slide-nav-right:focus,
+      #slide-nav-left:focus-visible,
+      #slide-nav-right:focus-visible {
+        outline: none;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+      }
+
+      #slide-nav-left:active,
+      #slide-nav-right:active {
+        background: transparent;
+        outline: none;
+      }
+
+      #slide-nav-left:hover,
+      #slide-nav-right:hover {
+        background: transparent;
+      }
+
+      #slide-nav-left::selection,
+      #slide-nav-right::selection {
+        background: transparent;
+      }
+
+      #slide-nav-left::-moz-selection,
+      #slide-nav-right::-moz-selection {
+        background: transparent;
+      }
+
+      #slide-nav-left {
+        left: 0;
+      }
+
+      #slide-nav-right {
+        right: 0;
+      }
+
+      #slide-nav-left:hover,
+      #slide-nav-right:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      #clock {
+        font-size: 28.6vh;
+        letter-spacing: 0.02em;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: rgba(255, 255, 255, 0.60);
+        text-shadow: 0 0 40px rgba(100, 200, 255, 0.15);
+        cursor: pointer;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+        margin-top: 30vh;
+      }
+
+      #clock:hover {
+        opacity: 0.8;
+      }
+
+      #clock .ampm {
+        font-size: 0.3em;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 500;
+        vertical-align: super;
+        margin-left: 0.1em;
+      }
+
+      @media (max-width: 600px) {
+        #clock {
+          font-size: 25.74vh;
+        }
+      }
+
+      @media (orientation: portrait) and (max-height: 600px) {
+        #clock {
+          font-size: 22.88vh;
+        }
+      }
+
+      #date {
+        font-size: 4.5vh;
+        letter-spacing: 0.15em;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 2vh;
+        cursor: pointer;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      #date:hover {
+        opacity: 0.8;
+      }
+
+      #slides-settings-trigger {
+        position: absolute;
+        top: 2vh;
+        left: 50%;
+        -webkit-transform: translateX(-50%);
+        transform: translateX(-50%);
+        width: 20vw;
+        height: 10vh;
+        cursor: pointer;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      #world-clocks {
+        position: absolute;
+        top: 4vh;
+        right: 5vw;
+        text-align: right;
+        cursor: pointer;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      #world-clocks:hover {
+        opacity: 0.8;
+      }
+
+      .world-clock {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-pack: end;
+        -webkit-justify-content: flex-end;
+        justify-content: flex-end;
+        -webkit-box-align: baseline;
+        -webkit-align-items: baseline;
+        align-items: baseline;
+        margin-bottom: 1vh;
+      }
+
+      .world-clock-label {
+        font-size: 2.5vh;
+        letter-spacing: 0.1em;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+        margin-right: 1.2vw;
+        text-transform: uppercase;
+      }
+
+      .world-clock-time {
+        font-size: 4vh;
+        letter-spacing: 0.02em;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      #crypto {
+        position: absolute;
+        top: 4vh;
+        left: 5vw;
+        text-align: left;
+        cursor: pointer;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      #crypto:hover {
+        opacity: 0.8;
+      }
+
+      #exchange-rates {
+        position: absolute;
+        bottom: 4vh;
+        right: 5vw;
+        text-align: right;
+        cursor: pointer;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      #exchange-rates:hover {
+        opacity: 0.8;
+      }
+
+      .crypto-row {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-align: baseline;
+        -webkit-align-items: baseline;
+        align-items: baseline;
+        margin-bottom: 1vh;
+      }
+
+      .exchange-row {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-align: baseline;
+        -webkit-align-items: baseline;
+        align-items: baseline;
+        -webkit-box-pack: end;
+        -webkit-justify-content: flex-end;
+        justify-content: flex-end;
+        margin-bottom: 1vh;
+      }
+
+      .crypto-label {
+        font-size: 2.5vh;
+        letter-spacing: 0.1em;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+        width: 5.5em;
+        text-transform: uppercase;
+      }
+
+      .crypto-price {
+        font-size: 4vh;
+        letter-spacing: 0.02em;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .exchange-label {
+        font-size: 2.5vh;
+        letter-spacing: 0.1em;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+        margin-right: 1.2vw;
+        text-transform: uppercase;
+      }
+
+      .exchange-price {
+        font-size: 4vh;
+        letter-spacing: 0.02em;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: rgba(255, 255, 255, 0.85);
+        order: -1;
+      }
+
+      #weather {
+        position: absolute;
+        bottom: 4vh;
+        left: 5vw;
+        text-align: left;
+        cursor: pointer;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      #weather:hover {
+        opacity: 0.8;
+      }
+
+      #weather-location {
+        font-size: 2.5vh;
+        letter-spacing: 0.1em;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 0.5vh;
+      }
+
+      #weather-info {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-align: baseline;
+        -webkit-align-items: baseline;
+        align-items: baseline;
+      }
+
+      #weather-temp {
+        font-size: 5vh;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      #weather-desc {
+        font-size: 3vh;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.6);
+        margin-left: 1.2vw;
+      }
+
+      #settings-btn {
+        position: absolute;
+        bottom: 2vh;
+        right: 2vw;
+        width: 60px;
+        height: 60px;
+        min-width: 60px;
+        min-height: 60px;
+        border: none;
+        background: transparent;
+        border-radius: 50%;
+        cursor: pointer;
+        padding: 0;
+        margin: 0;
+        opacity: 0.4;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-appearance: none;
+        appearance: none;
+        display: none;
+      }
+
+      #settings-btn:hover,
+      #settings-btn:active {
+        opacity: 0.7;
+      }
+
+      #settings-btn span {
+        display: inline-block;
+        width: 60px;
+        height: 60px;
+        font-size: 40px;
+        line-height: 60px;
+        text-align: center;
+        color: #ffffff;
+        -webkit-text-size-adjust: none;
+        text-size-adjust: none;
+        -webkit-transform: scale(1.5);
+        transform: scale(1.5);
+      }
+
+      #settings-panel {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+        background: rgba(20, 25, 30, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 1.5vh;
+        padding: 0;
+        text-align: left;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        min-width: 300px;
+        max-width: 400px;
+        z-index: 1000;
+      }
+
+      #settings-panel.open {
+        display: block;
+      }
+
+      .settings-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+
+      .settings-overlay.open {
+        display: block;
+      }
+
+      .settings-header {
+        padding: 2.5vh 3vw;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-pack: justify;
+        -webkit-justify-content: space-between;
+        justify-content: space-between;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        align-items: center;
+      }
+
+      .settings-header h3 {
+        margin: 0;
+        font-size: 2.5vh;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        letter-spacing: 0.05em;
+      }
+
+      .settings-close {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 3vh;
+        cursor: pointer;
+        padding: 0;
+        width: 4vh;
+        height: 4vh;
+        line-height: 4vh;
+        -webkit-transition: color 0.2s;
+        transition: color 0.2s;
+      }
+
+      .settings-close:hover {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .settings-body {
+        padding: 3vh 3vw;
+      }
+
+      .settings-tabs {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        display: none;
+      }
+
+      .settings-tab {
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        flex: 1;
+        padding: 2vh 0;
+        text-align: center;
+        font-size: 2.2vh;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        -webkit-transition: color 0.2s, background 0.2s;
+        transition: color 0.2s, background 0.2s;
+        border-radius: 0;
+      }
+
+      .settings-tab:first-child {
+        border-top-left-radius: 1.5vh;
+      }
+
+      .settings-tab:last-child {
+        border-top-right-radius: 1.5vh;
+      }
+
+      .settings-tab.active {
+        color: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .settings-tab-content {
+        display: block;
+        padding: 0;
+      }
+
+      .settings-tab-content.active {
+        display: block;
+      }
+
+      .settings-title {
+        font-size: 2.2vh;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 2.5vh;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: none;
+      }
+
+      .settings-row {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        align-items: center;
+        margin-bottom: 2vh;
+      }
+
+      .settings-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .pair-item {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        align-items: center;
+        -webkit-box-pack: justify;
+        -webkit-justify-content: space-between;
+        justify-content: space-between;
+        margin-bottom: 1.5vh;
+        padding: 1vh 1.5vw;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 0.5vh;
+      }
+
+      .pair-text {
+        font-size: 2.5vh;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.85);
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        flex: 1;
+      }
+
+      .pair-controls {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        gap: 1vw;
+      }
+
+      .pair-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 2vh;
+        padding: 0.5vh 1vw;
+        border-radius: 0.5vh;
+        cursor: pointer;
+        -webkit-transition: background 0.2s;
+        transition: background 0.2s;
+      }
+
+      .pair-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .pair-btn.delete {
+        color: rgba(255, 100, 100, 0.9);
+      }
+
+      .add-pair-form {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        align-items: center;
+        gap: 1vw;
+        margin-top: 2vh;
+        padding-top: 2vh;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .add-pair-form input {
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 2vh;
+        padding: 1vh 1vw;
+        border-radius: 0.5vh;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      .add-pair-form button {
+        background: rgba(100, 180, 255, 0.3);
+        border: 1px solid rgba(100, 180, 255, 0.5);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 2vh;
+        padding: 1vh 2vw;
+        border-radius: 0.5vh;
+        cursor: pointer;
+        font-weight: 600;
+        -webkit-transition: background 0.2s;
+        transition: background 0.2s;
+        white-space: nowrap;
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 auto;
+        flex: 0 0 auto;
+        margin-left: auto;
+      }
+
+      .add-pair-form button:hover {
+        background: rgba(100, 180, 255, 0.5);
+      }
+
+      .settings-row label {
+        font-size: 2.5vh;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        margin-left: 1.5vw;
+        cursor: pointer;
+      }
+
+      .settings-row input[type="checkbox"] {
+        width: 3vh;
+        height: 3vh;
+        cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 0.5vh;
+      }
+
+      .settings-row input[type="checkbox"]:checked {
+        background: rgba(100, 180, 255, 0.7);
+        border-color: rgba(100, 180, 255, 0.9);
+      }
+
+      .settings-row select {
+        font-size: 2.2vh;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 0.5vh;
+        padding: 0.5vh 1vw;
+        cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      .settings-row select option {
+        background: #1a1f24;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .settings-row .settings-label {
+        font-size: 2.5vh;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        margin-right: 1.5vw;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="slideshow-background"></div>
+    <div id="slide-nav-left"></div>
+    <div id="slide-nav-right"></div>
+    <div id="clock">00:00:00</div>
+    <div id="date">Jan 01 Mon</div>
+
+    <div id="slides-settings-trigger"></div>
+
+    <div id="world-clocks">
+      <!-- Content will be dynamically generated -->
+    </div>
+
+    <div id="crypto">
+      <!-- Content will be dynamically generated -->
+    </div>
+
+    <div id="exchange-rates">
+      <!-- Content will be dynamically generated -->
+    </div>
+
+    <div id="weather">
+      <div id="weather-location">Hobsonville</div>
+      <div id="weather-info">
+        <span id="weather-temp">--</span>
+        <span id="weather-desc">--</span>
+      </div>
+    </div>
+
+    <button id="settings-btn"><span>&#9881;</span></button>
+
+    <div class="settings-overlay" id="settings-overlay"></div>
+    <div id="settings-panel">
+      <div class="settings-header">
+        <h3 id="settings-title">Settings</h3>
+        <button class="settings-close" id="settings-close">&times;</button>
+      </div>
+      <div class="settings-body" id="settings-body">
+        <!-- Content will be dynamically loaded -->
+      </div>
+    </div>
+
+    <script>
+      // Settings
+      var settings = {
+        use24h: true,
+        showSeconds: true,
+        showDate: true,
+        dateFormat: 'mon-dd-day',
+        weatherLocation: '',
+        weatherUpdateInterval: 30,
+        cryptoUpdateInterval: 10,
+        cryptos: ['bitcoin', 'ethereum'],
+        forexUpdateInterval: 10,
+        forexPairs: [
+          {from: 'NZD', to: 'CNY'},
+          {from: 'USD', to: 'NZD'}
+        ],
+        worldClocks: [
+          {label: 'CST', offset: 8, dst: false},
+          {label: 'ET', offset: -5, dst: true}
+        ],
+        slideInterval: 5,
+        album: '',
+        currentSlideIndex: 0
+      };
+
+      // Cryptocurrency database (CoinGecko IDs)
+      var cryptoDatabase = {
+        'BTC': {id: 'bitcoin', name: 'Bitcoin'},
+        'ETH': {id: 'ethereum', name: 'Ethereum'},
+        'USDT': {id: 'tether', name: 'Tether'},
+        'BNB': {id: 'binancecoin', name: 'BNB'},
+        'SOL': {id: 'solana', name: 'Solana'},
+        'XRP': {id: 'ripple', name: 'XRP'},
+        'USDC': {id: 'usd-coin', name: 'USD Coin'},
+        'ADA': {id: 'cardano', name: 'Cardano'},
+        'DOGE': {id: 'dogecoin', name: 'Dogecoin'},
+        'TRX': {id: 'tron', name: 'TRON'},
+        'AVAX': {id: 'avalanche-2', name: 'Avalanche'},
+        'SHIB': {id: 'shiba-inu', name: 'Shiba Inu'},
+        'DOT': {id: 'polkadot', name: 'Polkadot'},
+        'LINK': {id: 'chainlink', name: 'Chainlink'},
+        'MATIC': {id: 'matic-network', name: 'Polygon'},
+        'UNI': {id: 'uniswap', name: 'Uniswap'},
+        'LTC': {id: 'litecoin', name: 'Litecoin'},
+        'ATOM': {id: 'cosmos', name: 'Cosmos'},
+        'XMR': {id: 'monero', name: 'Monero'},
+        'ETC': {id: 'ethereum-classic', name: 'Ethereum Classic'},
+        'APT': {id: 'aptos', name: 'Aptos'},
+        'ARB': {id: 'arbitrum', name: 'Arbitrum'},
+        'OP': {id: 'optimism', name: 'Optimism'},
+        'NEAR': {id: 'near', name: 'NEAR Protocol'},
+        'FIL': {id: 'filecoin', name: 'Filecoin'},
+        'ALGO': {id: 'algorand', name: 'Algorand'},
+        'VET': {id: 'vechain', name: 'VeChain'},
+        'AAVE': {id: 'aave', name: 'Aave'},
+        'XLM': {id: 'stellar', name: 'Stellar'}
+      };
+
+      // Time zone database
+      var timezones = {
+        // US & Canada
+        'PST': {offset: -8, dst: true, name: 'Pacific Standard Time'},
+        'MST': {offset: -7, dst: true, name: 'Mountain Standard Time'},
+        'CST': {offset: -6, dst: true, name: 'Central Standard Time'},
+        'EST': {offset: -5, dst: true, name: 'Eastern Standard Time'},
+        'ET': {offset: -5, dst: true, name: 'Eastern Time'},
+        'PT': {offset: -8, dst: true, name: 'Pacific Time'},
+        'MT': {offset: -7, dst: true, name: 'Mountain Time'},
+        'CT': {offset: -6, dst: true, name: 'Central Time'},
+        'AST': {offset: -4, dst: false, name: 'Atlantic Standard Time'},
+        'AKST': {offset: -9, dst: true, name: 'Alaska Standard Time'},
+        'HST': {offset: -10, dst: false, name: 'Hawaii Standard Time'},
+        // Europe
+        'GMT': {offset: 0, dst: false, name: 'Greenwich Mean Time'},
+        'UTC': {offset: 0, dst: false, name: 'Coordinated Universal Time'},
+        'BST': {offset: 1, dst: false, name: 'British Summer Time'},
+        'CET': {offset: 1, dst: false, name: 'Central European Time'},
+        'EET': {offset: 2, dst: false, name: 'Eastern European Time'},
+        'WET': {offset: 0, dst: false, name: 'Western European Time'},
+        // Asia
+        'JST': {offset: 9, dst: false, name: 'Japan Standard Time'},
+        'KST': {offset: 9, dst: false, name: 'Korea Standard Time'},
+        'IST': {offset: 5.5, dst: false, name: 'India Standard Time'},
+        'CST': {offset: 8, dst: false, name: 'China Standard Time'},
+        'HKT': {offset: 8, dst: false, name: 'Hong Kong Time'},
+        'SGT': {offset: 8, dst: false, name: 'Singapore Time'},
+        'PKT': {offset: 5, dst: false, name: 'Pakistan Standard Time'},
+        'WIB': {offset: 7, dst: false, name: 'Western Indonesian Time'},
+        // Australia & Pacific
+        'AEST': {offset: 10, dst: false, name: 'Australian Eastern Standard Time'},
+        'ACST': {offset: 9.5, dst: false, name: 'Australian Central Standard Time'},
+        'AWST': {offset: 8, dst: false, name: 'Australian Western Standard Time'},
+        'NZST': {offset: 12, dst: true, name: 'New Zealand Standard Time'},
+        // South America
+        'ART': {offset: -3, dst: false, name: 'Argentina Time'},
+        'BRT': {offset: -3, dst: false, name: 'Brasilia Time'},
+        'CLT': {offset: -4, dst: true, name: 'Chile Standard Time'},
+        // Africa
+        'EAT': {offset: 3, dst: false, name: 'East Africa Time'},
+        'CAT': {offset: 2, dst: false, name: 'Central Africa Time'},
+        'SAST': {offset: 2, dst: false, name: 'South Africa Standard Time'},
+        // Middle East
+        'MSK': {offset: 3, dst: false, name: 'Moscow Time'},
+        'GST': {offset: 4, dst: false, name: 'Gulf Standard Time'},
+        'IRST': {offset: 3.5, dst: false, name: 'Iran Standard Time'}
+      };
+
+      // Load settings from localStorage
+      function loadSettings() {
+        try {
+          var saved = localStorage.getItem('dashboardSettings');
+          if (saved) {
+            var parsed = JSON.parse(saved);
+            if (typeof parsed.use24h === 'boolean') settings.use24h = parsed.use24h;
+            if (typeof parsed.showSeconds === 'boolean') settings.showSeconds = parsed.showSeconds;
+            if (typeof parsed.showDate === 'boolean') settings.showDate = parsed.showDate;
+            if (typeof parsed.dateFormat === 'string') settings.dateFormat = parsed.dateFormat;
+            if (typeof parsed.weatherLocation === 'string') settings.weatherLocation = parsed.weatherLocation;
+            if (typeof parsed.weatherUpdateInterval === 'number') settings.weatherUpdateInterval = parsed.weatherUpdateInterval;
+            if (typeof parsed.cryptoUpdateInterval === 'number') settings.cryptoUpdateInterval = parsed.cryptoUpdateInterval;
+            if (Array.isArray(parsed.cryptos) && parsed.cryptos.length > 0) settings.cryptos = parsed.cryptos;
+            if (typeof parsed.forexUpdateInterval === 'number') settings.forexUpdateInterval = parsed.forexUpdateInterval;
+            if (Array.isArray(parsed.forexPairs) && parsed.forexPairs.length > 0) settings.forexPairs = parsed.forexPairs;
+            if (Array.isArray(parsed.worldClocks) && parsed.worldClocks.length > 0) settings.worldClocks = parsed.worldClocks;
+            if (typeof parsed.slideInterval === 'number') settings.slideInterval = parsed.slideInterval;
+            if (typeof parsed.album === 'string') settings.album = parsed.album;
+            if (typeof parsed.currentSlideIndex === 'number') settings.currentSlideIndex = parsed.currentSlideIndex;
+          }
+        } catch (e) {
+          // localStorage not available or parse error
+        }
+      }
+
+      // Save settings to localStorage
+      function saveSettings() {
+        try {
+          localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+        } catch (e) {
+          // localStorage not available
+        }
+      }
+
+      loadSettings();
+
+      // Data update scheduling
+      var dataTimers = {
+        crypto: null,
+        forex: null,
+        weather: null
+      };
+      var dataFetchers = {};
+
+      function scheduleDataUpdates() {
+        if (dataTimers.crypto) clearInterval(dataTimers.crypto);
+        if (dataTimers.forex) clearInterval(dataTimers.forex);
+        if (dataTimers.weather) clearInterval(dataTimers.weather);
+
+        if (dataFetchers.crypto) {
+          var cryptoIntervalMs = settings.cryptoUpdateInterval * 60 * 1000;
+          dataTimers.crypto = setInterval(dataFetchers.crypto, cryptoIntervalMs);
+        }
+        if (dataFetchers.forex) {
+          var forexIntervalMs = settings.forexUpdateInterval * 60 * 1000;
+          dataTimers.forex = setInterval(dataFetchers.forex, forexIntervalMs);
+        }
+        if (dataFetchers.weather) {
+          var weatherIntervalMs = settings.weatherUpdateInterval * 60 * 1000;
+          dataTimers.weather = setInterval(dataFetchers.weather, weatherIntervalMs);
+        }
+      }
+
+      (function () {
+        var settingsPanel = document.getElementById("settings-panel");
+        var settingsOverlay = document.getElementById("settings-overlay");
+        var settingsTitle = document.getElementById("settings-title");
+        var settingsBody = document.getElementById("settings-body");
+        var settingsClose = document.getElementById("settings-close");
+
+        var currentAlbumSelect = null;
+
+        function closeSettings() {
+          settingsPanel.className = "";
+          settingsOverlay.className = "";
+        }
+
+        function openSettings(title, content) {
+          settingsTitle.textContent = title;
+          settingsBody.innerHTML = content;
+          settingsPanel.className = "open";
+          settingsOverlay.className = "open";
+        }
+
+        settingsClose.onclick = closeSettings;
+        settingsOverlay.onclick = closeSettings;
+
+        // Main Clock Settings
+        document.getElementById("clock").onclick = function() {
+          var content = '<div class="settings-row">' +
+            '<input type="checkbox" id="setting-24h"' + (settings.use24h ? ' checked' : '') + '>' +
+            '<label for="setting-24h">24-hour format</label>' +
+            '</div>' +
+            '<div class="settings-row">' +
+            '<input type="checkbox" id="setting-seconds"' + (settings.showSeconds ? ' checked' : '') + '>' +
+            '<label for="setting-seconds">Show seconds</label>' +
+            '</div>';
+
+          openSettings("Main Clock", content);
+
+          document.getElementById("setting-24h").onchange = function() {
+            settings.use24h = this.checked;
+            saveSettings();
+          };
+          document.getElementById("setting-seconds").onchange = function() {
+            settings.showSeconds = this.checked;
+            saveSettings();
+          };
+        };
+
+        // World Clocks Settings
+        document.getElementById("world-clocks").onclick = function() {
+          function renderClocksList() {
+            var clocksHtml = '';
+            for (var i = 0; i < settings.worldClocks.length; i++) {
+              var clock = settings.worldClocks[i];
+              var offsetStr = (clock.offset >= 0 ? '+' : '') + clock.offset;
+              clocksHtml += '<div class="pair-item" data-index="' + i + '">' +
+                '<span class="pair-text">' + clock.label + ' (UTC' + offsetStr + ')' + (clock.dst ? ' DST' : '') + '</span>' +
+                '<div class="pair-controls">' +
+                '<button class="pair-btn move-up" ' + (i === 0 ? 'disabled' : '') + '>&uarr;</button>' +
+                '<button class="pair-btn move-down" ' + (i === settings.worldClocks.length - 1 ? 'disabled' : '') + '>&darr;</button>' +
+                '<button class="pair-btn delete">&times;</button>' +
+                '</div>' +
+                '</div>';
+            }
+
+            var content = clocksHtml +
+              '<div class="add-pair-form">' +
+              '<input type="text" id="new-clock-abbr" placeholder="e.g. PST, JST" maxlength="6" style="text-transform: uppercase;">' +
+              '<button id="add-clock-btn">Add</button>' +
+              '</div>' +
+              '<p style="font-size: 1.8vh; color: rgba(255,255,255,0.5); margin-top: 1.5vh; margin-bottom: 0;">' +
+              'Enter a time zone abbreviation. <a href="https://www.timeanddate.com/time/zones/" target="_blank" style="color: rgba(100,180,255,0.9); text-decoration: none;">View all time zones &rarr;</a>' +
+              '</p>';
+
+            settingsBody.innerHTML = content;
+
+            // Move up handlers
+            var moveUpBtns = document.querySelectorAll('.move-up');
+            for (var i = 0; i < moveUpBtns.length; i++) {
+              moveUpBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (index > 0) {
+                  var temp = settings.worldClocks[index];
+                  settings.worldClocks[index] = settings.worldClocks[index - 1];
+                  settings.worldClocks[index - 1] = temp;
+                  saveSettings();
+                  if (window.updateWorldClocksDisplay) window.updateWorldClocksDisplay();
+                  renderClocksList();
+                }
+              };
+            }
+
+            // Move down handlers
+            var moveDownBtns = document.querySelectorAll('.move-down');
+            for (var i = 0; i < moveDownBtns.length; i++) {
+              moveDownBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (index < settings.worldClocks.length - 1) {
+                  var temp = settings.worldClocks[index];
+                  settings.worldClocks[index] = settings.worldClocks[index + 1];
+                  settings.worldClocks[index + 1] = temp;
+                  saveSettings();
+                  if (window.updateWorldClocksDisplay) window.updateWorldClocksDisplay();
+                  renderClocksList();
+                }
+              };
+            }
+
+            // Delete handlers
+            var deleteBtns = document.querySelectorAll('.delete');
+            for (var i = 0; i < deleteBtns.length; i++) {
+              deleteBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (settings.worldClocks.length > 1) {
+                  settings.worldClocks.splice(index, 1);
+                  saveSettings();
+                  if (window.updateWorldClocksDisplay) window.updateWorldClocksDisplay();
+                  renderClocksList();
+                }
+              };
+            }
+
+            // Add clock handler
+            document.getElementById('add-clock-btn').onclick = function() {
+              var abbrInput = document.getElementById('new-clock-abbr');
+              var abbr = abbrInput.value.toUpperCase().trim();
+
+              if (abbr && timezones[abbr]) {
+                var tz = timezones[abbr];
+                settings.worldClocks.push({
+                  label: abbr,
+                  offset: tz.offset,
+                  dst: tz.dst
+                });
+                saveSettings();
+                abbrInput.value = '';
+                if (window.updateWorldClocksDisplay) window.updateWorldClocksDisplay();
+                renderClocksList();
+              } else if (abbr) {
+                alert('Time zone "' + abbr + '" not found. Please check the abbreviation and try again.');
+              }
+            };
+          }
+
+          openSettings("World Clocks", '');
+          renderClocksList();
+        };
+
+        // Date Widget Settings
+        document.getElementById("date").onclick = function() {
+          var content =
+            '<div style="margin-bottom: 2vh;">' +
+            '<label style="display: block; font-size: 2.5vh; color: rgba(255,255,255,0.8); margin-bottom: 1vh;">' +
+            '<input type="checkbox" id="show-date-checkbox" ' + (settings.showDate ? 'checked' : '') + ' style="margin-right: 1vh;">' +
+            'Show Date' +
+            '</label>' +
+            '</div>' +
+            '<div>' +
+            '<label style="display: block; font-size: 2.5vh; color: rgba(255,255,255,0.8); margin-bottom: 0.5vh;">Date Format</label>' +
+            '<select id="date-format-select" style="width: 100%; padding: 1vh; font-size: 2.2vh; background: rgba(30,35,40,0.9); color: #e0f4f4; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5vh;">' +
+            '<option value="mon-dd-day"' + (settings.dateFormat === 'mon-dd-day' ? ' selected' : '') + '>Jan 15 Wed</option>' +
+            '<option value="day-mon-dd"' + (settings.dateFormat === 'day-mon-dd' ? ' selected' : '') + '>Wed Jan 15</option>' +
+            '<option value="yyyy-mm-dd"' + (settings.dateFormat === 'yyyy-mm-dd' ? ' selected' : '') + '>2026-01-15</option>' +
+            '<option value="mm/dd/yyyy"' + (settings.dateFormat === 'mm/dd/yyyy' ? ' selected' : '') + '>01/15/2026</option>' +
+            '<option value="dd/mm/yyyy"' + (settings.dateFormat === 'dd/mm/yyyy' ? ' selected' : '') + '>15/01/2026</option>' +
+            '<option value="full"' + (settings.dateFormat === 'full' ? ' selected' : '') + '>Wednesday, January 15, 2026</option>' +
+            '</select>' +
+            '</div>';
+
+          openSettings("Date", content);
+
+          var showDateCheckbox = document.getElementById('show-date-checkbox');
+          var dateFormatSelect = document.getElementById('date-format-select');
+
+          showDateCheckbox.onchange = function() {
+            settings.showDate = this.checked;
+            saveSettings();
+            if (window.updateDateVisibility) window.updateDateVisibility();
+          };
+
+          dateFormatSelect.onchange = function() {
+            settings.dateFormat = this.value;
+            saveSettings();
+            if (window.updateClock) window.updateClock();
+          };
+        };
+
+        // Slides Settings
+        document.getElementById("slides-settings-trigger").onclick = function() {
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", "api.php?type=albums", true);
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+              try {
+                var data = JSON.parse(xhr.responseText);
+                var albumOptions = '';
+                if (data.albums && data.albums.length > 0) {
+                  for (var i = 0; i < data.albums.length; i++) {
+                    var selected = data.albums[i] === settings.album ? ' selected' : '';
+                    albumOptions += '<option value="' + data.albums[i] + '"' + selected + '>' +
+                                   data.albums[i] + '</option>';
+                  }
+                }
+
+                var content = '<div class="settings-row">' +
+                  '<span class="settings-label">Interval</span>' +
+                  '<select id="setting-slide-interval">' +
+                  '<option value="0"' + (settings.slideInterval === 0 ? ' selected' : '') + '>Disable</option>' +
+                  '<option value="3"' + (settings.slideInterval === 3 ? ' selected' : '') + '>3s</option>' +
+                  '<option value="5"' + (settings.slideInterval === 5 ? ' selected' : '') + '>5s</option>' +
+                  '<option value="10"' + (settings.slideInterval === 10 ? ' selected' : '') + '>10s</option>' +
+                  '<option value="15"' + (settings.slideInterval === 15 ? ' selected' : '') + '>15s</option>' +
+                  '<option value="30"' + (settings.slideInterval === 30 ? ' selected' : '') + '>30s</option>' +
+                  '<option value="60"' + (settings.slideInterval === 60 ? ' selected' : '') + '>60s</option>' +
+                  '</select>' +
+                  '</div>' +
+                  '<div class="settings-row">' +
+                  '<span class="settings-label">Album</span>' +
+                  '<select id="setting-album">' + albumOptions + '</select>' +
+                  '</div>';
+
+                openSettings("Slides", content);
+
+                document.getElementById("setting-slide-interval").onchange = function() {
+                  settings.slideInterval = parseInt(this.value, 10);
+                  saveSettings();
+                  if (window.updateSlideshowInterval) window.updateSlideshowInterval();
+                };
+                document.getElementById("setting-album").onchange = function() {
+                  settings.album = this.value;
+                  saveSettings();
+                  if (window.reloadSlideshow) window.reloadSlideshow();
+                };
+              } catch (e) {}
+            }
+          };
+          xhr.send();
+        };
+
+        // Weather Settings
+        document.getElementById("weather").onclick = function() {
+          var content =
+            '<div class="settings-row">' +
+            '<span class="settings-label">Update interval</span>' +
+            '<select id="setting-weather-interval">' +
+            '<option value="10"' + (settings.weatherUpdateInterval === 10 ? ' selected' : '') + '>10 min</option>' +
+            '<option value="30"' + (settings.weatherUpdateInterval === 30 ? ' selected' : '') + '>30 min</option>' +
+            '<option value="60"' + (settings.weatherUpdateInterval === 60 ? ' selected' : '') + '>60 min</option>' +
+            '</select>' +
+            '</div>' +
+            '<div style="margin-top: 2vh; margin-bottom: 2vh;">' +
+            '<label style="display: block; font-size: 2.5vh; color: rgba(255,255,255,0.8); margin-bottom: 0.5vh;">Location</label>' +
+            '<input type="text" id="weather-location-input" placeholder="Leave blank for current location" value="' + (settings.weatherLocation || '') + '" style="width: 100%; padding: 1vh; font-size: 2.2vh; background: rgba(30,35,40,0.9); color: #e0f4f4; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5vh; box-sizing: border-box;">' +
+            '</div>' +
+            '<div style="margin-bottom: 2vh;">' +
+            '<a href="#" id="weather-details-link" style="display: inline-block; font-size: 2.2vh; color: rgba(100,180,255,0.9); text-decoration: none; padding: 1vh 2vh; background: rgba(100,180,255,0.1); border-radius: 0.5vh; border: 1px solid rgba(100,180,255,0.3);">View Details →</a>' +
+            '</div>' +
+            '<p style="font-size: 1.8vh; color: rgba(255,255,255,0.5); margin-top: 1.5vh; margin-bottom: 0;">' +
+            'Enter a city name (e.g., Auckland, London, Tokyo). Leave blank to use your current GPS location. Weather data from <a href="https://open-meteo.com/" target="_blank" style="color: rgba(100,180,255,0.9); text-decoration: none;">Open-Meteo</a>.' +
+            '</p>';
+
+          openSettings("Weather", content);
+
+          var intervalSelect = document.getElementById('setting-weather-interval');
+          var locationInput = document.getElementById('weather-location-input');
+          var detailsLink = document.getElementById('weather-details-link');
+
+          intervalSelect.onchange = function() {
+            settings.weatherUpdateInterval = parseInt(this.value, 10);
+            saveSettings();
+            scheduleDataUpdates();
+          };
+
+          locationInput.onchange = function() {
+            settings.weatherLocation = this.value.trim();
+            saveSettings();
+            if (window.updateWeatherLocation) window.updateWeatherLocation();
+          };
+
+          detailsLink.onclick = function(e) {
+            e.preventDefault();
+            if (window.weatherData && window.weatherData.lat && window.weatherData.lon) {
+              var url = 'https://weather.com/weather/today/l/' +
+                        window.weatherData.lat + ',' + window.weatherData.lon;
+              window.open(url, '_blank');
+            }
+          };
+        };
+
+        // Crypto Prices Settings
+        document.getElementById("crypto").onclick = function() {
+          function renderCryptosList() {
+            var cryptosHtml = '';
+            for (var i = 0; i < settings.cryptos.length; i++) {
+              var cryptoId = settings.cryptos[i];
+              var label = '';
+              // Find label from database
+              for (var symbol in cryptoDatabase) {
+                if (cryptoDatabase.hasOwnProperty(symbol) && cryptoDatabase[symbol].id === cryptoId) {
+                  label = symbol;
+                  break;
+                }
+              }
+              if (!label) label = cryptoId.toUpperCase();
+
+              cryptosHtml += '<div class="pair-item" data-index="' + i + '">' +
+                '<span class="pair-text">' + label + '</span>' +
+                '<div class="pair-controls">' +
+                '<button class="pair-btn move-up" ' + (i === 0 ? 'disabled' : '') + '>&uarr;</button>' +
+                '<button class="pair-btn move-down" ' + (i === settings.cryptos.length - 1 ? 'disabled' : '') + '>&darr;</button>' +
+                '<button class="pair-btn delete">&times;</button>' +
+                '</div>' +
+                '</div>';
+            }
+
+            var content = '<div class="settings-row">' +
+              '<span class="settings-label">Update interval</span>' +
+              '<select id="setting-crypto-interval">' +
+              '<option value="1"' + (settings.cryptoUpdateInterval === 1 ? ' selected' : '') + '>1 min</option>' +
+              '<option value="5"' + (settings.cryptoUpdateInterval === 5 ? ' selected' : '') + '>5 min</option>' +
+              '<option value="10"' + (settings.cryptoUpdateInterval === 10 ? ' selected' : '') + '>10 min</option>' +
+              '<option value="30"' + (settings.cryptoUpdateInterval === 30 ? ' selected' : '') + '>30 min</option>' +
+              '<option value="60"' + (settings.cryptoUpdateInterval === 60 ? ' selected' : '') + '>60 min</option>' +
+              '</select>' +
+              '</div>' +
+              '<div style="margin-top: 2vh;">' + cryptosHtml + '</div>' +
+              '<div class="add-pair-form">' +
+              '<input type="text" id="new-crypto-symbol" placeholder="e.g. BTC, SOL" maxlength="10" style="text-transform: uppercase;">' +
+              '<button id="add-crypto-btn">Add</button>' +
+              '</div>' +
+              '<p style="font-size: 1.8vh; color: rgba(255,255,255,0.5); margin-top: 1.5vh; margin-bottom: 0;">' +
+              'Enter a crypto symbol (BTC, ETH, SOL, etc.)' +
+              '</p>';
+
+            settingsBody.innerHTML = content;
+
+            document.getElementById("setting-crypto-interval").onchange = function() {
+              settings.cryptoUpdateInterval = parseInt(this.value, 10);
+              saveSettings();
+              scheduleDataUpdates();
+            };
+
+            // Move up handlers
+            var moveUpBtns = document.querySelectorAll('.move-up');
+            for (var i = 0; i < moveUpBtns.length; i++) {
+              moveUpBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (index > 0) {
+                  var temp = settings.cryptos[index];
+                  settings.cryptos[index] = settings.cryptos[index - 1];
+                  settings.cryptos[index - 1] = temp;
+                  saveSettings();
+                  if (window.updateCryptoDisplay) window.updateCryptoDisplay();
+                  renderCryptosList();
+                }
+              };
+            }
+
+            // Move down handlers
+            var moveDownBtns = document.querySelectorAll('.move-down');
+            for (var i = 0; i < moveDownBtns.length; i++) {
+              moveDownBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (index < settings.cryptos.length - 1) {
+                  var temp = settings.cryptos[index];
+                  settings.cryptos[index] = settings.cryptos[index + 1];
+                  settings.cryptos[index + 1] = temp;
+                  saveSettings();
+                  if (window.updateCryptoDisplay) window.updateCryptoDisplay();
+                  renderCryptosList();
+                }
+              };
+            }
+
+            // Delete handlers
+            var deleteBtns = document.querySelectorAll('.delete');
+            for (var i = 0; i < deleteBtns.length; i++) {
+              deleteBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (settings.cryptos.length > 1) {
+                  settings.cryptos.splice(index, 1);
+                  saveSettings();
+                  if (window.updateCryptoDisplay) window.updateCryptoDisplay();
+                  renderCryptosList();
+                }
+              };
+            }
+
+            // Add crypto handler
+            document.getElementById('add-crypto-btn').onclick = function() {
+              var symbolInput = document.getElementById('new-crypto-symbol');
+              var symbol = symbolInput.value.toUpperCase().trim();
+
+              if (symbol && cryptoDatabase[symbol]) {
+                var crypto = cryptoDatabase[symbol];
+                settings.cryptos.push(crypto.id);
+                saveSettings();
+                symbolInput.value = '';
+                if (window.updateCryptoDisplay) window.updateCryptoDisplay();
+                renderCryptosList();
+              } else if (symbol) {
+                alert('Cryptocurrency "' + symbol + '" not found. Please check the symbol and try again.');
+              }
+            };
+          }
+
+          openSettings("Crypto Prices", '');
+          renderCryptosList();
+        };
+
+        // Exchange Rates Settings
+        document.getElementById("exchange-rates").onclick = function() {
+          function renderPairsList() {
+            var pairsHtml = '';
+            for (var i = 0; i < settings.forexPairs.length; i++) {
+              var pair = settings.forexPairs[i];
+              pairsHtml += '<div class="pair-item" data-index="' + i + '">' +
+                '<span class="pair-text">' + pair.from + '/' + pair.to + '</span>' +
+                '<div class="pair-controls">' +
+                '<button class="pair-btn move-up" ' + (i === 0 ? 'disabled' : '') + '>&uarr;</button>' +
+                '<button class="pair-btn move-down" ' + (i === settings.forexPairs.length - 1 ? 'disabled' : '') + '>&darr;</button>' +
+                '<button class="pair-btn delete">&times;</button>' +
+                '</div>' +
+                '</div>';
+            }
+
+            var content = '<div class="settings-row">' +
+              '<span class="settings-label">Update interval</span>' +
+              '<select id="setting-forex-interval">' +
+              '<option value="1"' + (settings.forexUpdateInterval === 1 ? ' selected' : '') + '>1 min</option>' +
+              '<option value="5"' + (settings.forexUpdateInterval === 5 ? ' selected' : '') + '>5 min</option>' +
+              '<option value="10"' + (settings.forexUpdateInterval === 10 ? ' selected' : '') + '>10 min</option>' +
+              '<option value="30"' + (settings.forexUpdateInterval === 30 ? ' selected' : '') + '>30 min</option>' +
+              '<option value="60"' + (settings.forexUpdateInterval === 60 ? ' selected' : '') + '>60 min</option>' +
+              '</select>' +
+              '</div>' +
+              '<div style="margin-top: 2vh;">' + pairsHtml + '</div>' +
+              '<div class="add-pair-form">' +
+              '<input type="text" id="new-pair-from" placeholder="FROM" maxlength="3">' +
+              '<span style="color: rgba(255,255,255,0.5); font-size: 2vh;">/</span>' +
+              '<input type="text" id="new-pair-to" placeholder="TO" maxlength="3">' +
+              '<button id="add-pair-btn">Add</button>' +
+              '</div>';
+
+            settingsBody.innerHTML = content;
+
+            document.getElementById("setting-forex-interval").onchange = function() {
+              settings.forexUpdateInterval = parseInt(this.value, 10);
+              saveSettings();
+              scheduleDataUpdates();
+            };
+
+            // Move up handlers
+            var moveUpBtns = document.querySelectorAll('.move-up');
+            for (var i = 0; i < moveUpBtns.length; i++) {
+              moveUpBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (index > 0) {
+                  var temp = settings.forexPairs[index];
+                  settings.forexPairs[index] = settings.forexPairs[index - 1];
+                  settings.forexPairs[index - 1] = temp;
+                  saveSettings();
+                  if (window.updateForexDisplay) window.updateForexDisplay();
+                  renderPairsList();
+                }
+              };
+            }
+
+            // Move down handlers
+            var moveDownBtns = document.querySelectorAll('.move-down');
+            for (var i = 0; i < moveDownBtns.length; i++) {
+              moveDownBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (index < settings.forexPairs.length - 1) {
+                  var temp = settings.forexPairs[index];
+                  settings.forexPairs[index] = settings.forexPairs[index + 1];
+                  settings.forexPairs[index + 1] = temp;
+                  saveSettings();
+                  if (window.updateForexDisplay) window.updateForexDisplay();
+                  renderPairsList();
+                }
+              };
+            }
+
+            // Delete handlers
+            var deleteBtns = document.querySelectorAll('.delete');
+            for (var i = 0; i < deleteBtns.length; i++) {
+              deleteBtns[i].onclick = function() {
+                var index = parseInt(this.parentNode.parentNode.getAttribute('data-index'), 10);
+                if (settings.forexPairs.length > 1) {
+                  settings.forexPairs.splice(index, 1);
+                  saveSettings();
+                  if (window.updateForexDisplay) window.updateForexDisplay();
+                  renderPairsList();
+                }
+              };
+            }
+
+            // Add pair handler
+            document.getElementById('add-pair-btn').onclick = function() {
+              var fromInput = document.getElementById('new-pair-from');
+              var toInput = document.getElementById('new-pair-to');
+              var from = fromInput.value.toUpperCase().trim();
+              var to = toInput.value.toUpperCase().trim();
+
+              if (from && to && from.length === 3 && to.length === 3) {
+                settings.forexPairs.push({from: from, to: to});
+                saveSettings();
+                fromInput.value = '';
+                toInput.value = '';
+                if (window.updateForexDisplay) window.updateForexDisplay();
+                renderPairsList();
+              }
+            };
+          }
+
+          openSettings("Exchange Rates", '');
+          renderPairsList();
+        };
+      })();
+
+      (function () {
+        var clockElement = document.getElementById("clock");
+        var dateElement = document.getElementById("date");
+        var worldClocksContainer = document.getElementById("world-clocks");
+        var worldClockElements = [];
+        var monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec"
+        ];
+        var dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        var fullDayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        var fullMonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        function pad(value) {
+          return value < 10 ? "0" + value : value;
+        }
+
+        function formatDate(now, format) {
+          var year = now.getFullYear();
+          var month = now.getMonth();
+          var date = now.getDate();
+          var day = now.getDay();
+
+          switch(format) {
+            case 'mon-dd-day':
+              return monthNames[month] + " " + date + " " + dayNames[day];
+            case 'day-mon-dd':
+              return dayNames[day] + " " + monthNames[month] + " " + date;
+            case 'yyyy-mm-dd':
+              return year + "-" + pad(month + 1) + "-" + pad(date);
+            case 'mm/dd/yyyy':
+              return pad(month + 1) + "/" + pad(date) + "/" + year;
+            case 'dd/mm/yyyy':
+              return pad(date) + "/" + pad(month + 1) + "/" + year;
+            case 'full':
+              return fullDayNames[day] + ", " + fullMonthNames[month] + " " + date + ", " + year;
+            default:
+              return monthNames[month] + " " + date + " " + dayNames[day];
+          }
+        }
+
+        function updateDateVisibility() {
+          dateElement.style.opacity = settings.showDate ? '1' : '0';
+        }
+
+        function formatTime(hours, minutes, seconds, showSeconds, useAmpmSpan) {
+          if (settings.use24h) {
+            if (showSeconds === false) {
+              return pad(hours) + ":" + pad(minutes);
+            }
+            return pad(hours) + ":" + pad(minutes) + ":" + pad(seconds);
+          } else {
+            var suffix = hours >= 12 ? "PM" : "AM";
+            var h = hours % 12;
+            if (h === 0) h = 12;
+            var suffixHtml = useAmpmSpan ? '<span class="ampm">' + suffix + '</span>' : ' ' + suffix;
+            if (showSeconds === false) {
+              return h + ":" + pad(minutes) + suffixHtml;
+            }
+            return h + ":" + pad(minutes) + ":" + pad(seconds) + suffixHtml;
+          }
+        }
+
+        function updateWorldClocksDisplay() {
+          worldClocksContainer.innerHTML = '';
+          worldClockElements = [];
+
+          for (var i = 0; i < settings.worldClocks.length; i++) {
+            var clock = settings.worldClocks[i];
+
+            var clockDiv = document.createElement('div');
+            clockDiv.className = 'world-clock';
+
+            var labelDiv = document.createElement('div');
+            labelDiv.className = 'world-clock-label';
+            labelDiv.textContent = clock.label;
+
+            var timeDiv = document.createElement('div');
+            timeDiv.className = 'world-clock-time';
+            timeDiv.textContent = '00:00';
+
+            clockDiv.appendChild(labelDiv);
+            clockDiv.appendChild(timeDiv);
+            worldClocksContainer.appendChild(clockDiv);
+
+            worldClockElements.push({
+              element: timeDiv,
+              offset: clock.offset,
+              dst: clock.dst
+            });
+          }
+        }
+
+        // DST calculation for US Eastern Time
+        function isEasternDST(d) {
+          var year = d.getUTCFullYear();
+          var marchFirst = new Date(Date.UTC(year, 2, 1));
+          var marchDay = marchFirst.getUTCDay();
+          var dstStart = new Date(Date.UTC(year, 2, 8 + (7 - marchDay) % 7, 7));
+          var novFirst = new Date(Date.UTC(year, 10, 1));
+          var novDay = novFirst.getUTCDay();
+          var dstEnd = new Date(Date.UTC(year, 10, 1 + (7 - novDay) % 7, 6));
+          return d >= dstStart && d < dstEnd;
+        }
+
+        function updateClock() {
+          var now = new Date();
+          var hours = now.getHours();
+          var minutes = now.getMinutes();
+          var seconds = now.getSeconds();
+
+          clockElement.innerHTML = formatTime(hours, minutes, seconds, settings.showSeconds, true);
+          dateElement.innerHTML = formatDate(now, settings.dateFormat);
+
+          // Update world clocks
+          var utc = now.getTime() + now.getTimezoneOffset() * 60000;
+          for (var i = 0; i < worldClockElements.length; i++) {
+            var wc = worldClockElements[i];
+            var offset = wc.offset;
+
+            // Apply DST adjustment if enabled
+            if (wc.dst) {
+              if (isEasternDST(now)) {
+                offset += 1;
+              }
+            }
+
+            var clockTime = new Date(utc + offset * 3600000);
+            wc.element.innerHTML = formatTime(clockTime.getHours(), clockTime.getMinutes(), clockTime.getSeconds(), false);
+          }
+
+          var milliseconds = now.getMilliseconds();
+          window.setTimeout(updateClock, 1000 - milliseconds);
+        }
+
+        window.updateWorldClocksDisplay = updateWorldClocksDisplay;
+        window.updateDateVisibility = updateDateVisibility;
+        window.updateClock = updateClock;
+        updateWorldClocksDisplay();
+        updateDateVisibility();
+        updateClock();
+      })();
+
+      // Crypto prices
+      (function () {
+        var cryptoContainer = document.getElementById("crypto");
+        var priceElements = {};
+
+        function formatPrice(price) {
+          if (price >= 1000) {
+            return "$" + Math.round(price).toLocaleString();
+          }
+          return "$" + price.toFixed(2);
+        }
+
+        function updateCryptoDisplay() {
+          cryptoContainer.innerHTML = '';
+          priceElements = {};
+
+          for (var i = 0; i < settings.cryptos.length; i++) {
+            var cryptoId = settings.cryptos[i];
+            var label = '';
+            // Find label from database
+            for (var symbol in cryptoDatabase) {
+              if (cryptoDatabase.hasOwnProperty(symbol) && cryptoDatabase[symbol].id === cryptoId) {
+                label = symbol;
+                break;
+              }
+            }
+            if (!label) label = cryptoId.toUpperCase().substring(0, 4);
+
+            var row = document.createElement('div');
+            row.className = 'crypto-row';
+
+            var labelSpan = document.createElement('span');
+            labelSpan.className = 'crypto-label';
+            labelSpan.textContent = label;
+
+            var priceSpan = document.createElement('span');
+            priceSpan.className = 'crypto-price';
+            priceSpan.id = 'price-' + cryptoId;
+            priceSpan.textContent = '--';
+
+            row.appendChild(labelSpan);
+            row.appendChild(priceSpan);
+            cryptoContainer.appendChild(row);
+
+            priceElements[cryptoId] = priceSpan;
+          }
+
+          fetchPrices();
+        }
+
+        function fetchPrices() {
+          var ids = settings.cryptos.join(',');
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", "api.php?type=crypto&ids=" + ids, true);
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                try {
+                  var data = JSON.parse(xhr.responseText);
+                  for (var cryptoId in data) {
+                    if (data.hasOwnProperty(cryptoId) && data[cryptoId] && data[cryptoId].usd) {
+                      var element = priceElements[cryptoId];
+                      if (element) {
+                        element.innerHTML = formatPrice(data[cryptoId].usd);
+                      }
+                    }
+                  }
+                } catch (e) {
+                  // JSON parse error
+                }
+              }
+            }
+          };
+          xhr.send();
+        }
+
+        window.updateCryptoDisplay = updateCryptoDisplay;
+        dataFetchers.crypto = fetchPrices;
+
+        updateCryptoDisplay();
+      })();
+
+      // Exchange rates
+      (function () {
+        var exchangeContainer = document.getElementById("exchange-rates");
+        var rateElements = {};
+
+        function updateForexDisplay() {
+          exchangeContainer.innerHTML = '';
+          rateElements = {};
+
+          for (var i = 0; i < settings.forexPairs.length; i++) {
+            var pair = settings.forexPairs[i];
+            var pairKey = pair.from + '_' + pair.to;
+
+            var row = document.createElement('div');
+            row.className = 'exchange-row';
+
+            var label = document.createElement('span');
+            label.className = 'exchange-label';
+            label.textContent = pair.from + '/' + pair.to;
+
+            var price = document.createElement('span');
+            price.className = 'exchange-price';
+            price.id = 'rate-' + pairKey;
+            price.textContent = '--';
+
+            row.appendChild(label);
+            row.appendChild(price);
+            exchangeContainer.appendChild(row);
+
+            rateElements[pairKey] = price;
+          }
+
+          fetchRates();
+        }
+
+        function fetchRates() {
+          // Group pairs by base currency for API efficiency
+          var fromCurrencies = {};
+          for (var i = 0; i < settings.forexPairs.length; i++) {
+            var pair = settings.forexPairs[i];
+            if (!fromCurrencies[pair.from]) {
+              fromCurrencies[pair.from] = [];
+            }
+            fromCurrencies[pair.from].push(pair.to);
+          }
+
+          // Fetch rates for each base currency
+          for (var from in fromCurrencies) {
+            if (fromCurrencies.hasOwnProperty(from)) {
+              (function(fromCur, toCurs) {
+                var xhr = new XMLHttpRequest();
+                var url = 'https://api.frankfurter.app/latest?from=' + fromCur + '&to=' + toCurs.join(',');
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function () {
+                  if (xhr.readyState === 4 && xhr.status === 200) {
+                    try {
+                      var data = JSON.parse(xhr.responseText);
+                      if (data.rates) {
+                        for (var to in data.rates) {
+                          if (data.rates.hasOwnProperty(to)) {
+                            var pairKey = fromCur + '_' + to;
+                            var element = rateElements[pairKey];
+                            if (element) {
+                              element.textContent = data.rates[to].toFixed(2);
+                            }
+                          }
+                        }
+                      }
+                    } catch (e) {
+                      // JSON parse error
+                    }
+                  }
+                };
+                xhr.send();
+              })(from, fromCurrencies[from]);
+            }
+          }
+        }
+
+        window.updateForexDisplay = updateForexDisplay;
+        dataFetchers.forex = fetchRates;
+
+        updateForexDisplay();
+      })();
+
+      // Weather with geolocation
+      (function () {
+        var tempElement = document.getElementById("weather-temp");
+        var descElement = document.getElementById("weather-desc");
+        var locationElement = document.getElementById("weather-location");
+        // Default: Hobsonville coordinates
+        var lat = -36.7833;
+        var lon = 174.6500;
+        var locationDetected = false;
+
+        // Expose weather data globally for settings dialog
+        window.weatherData = {
+          lat: lat,
+          lon: lon,
+          locationName: 'Hobsonville'
+        };
+
+        var weatherCodes = {
+          0: "Clear",
+          1: "Mostly Clear",
+          2: "Partly Cloudy",
+          3: "Overcast",
+          45: "Foggy",
+          48: "Fog",
+          51: "Light Drizzle",
+          53: "Drizzle",
+          55: "Heavy Drizzle",
+          61: "Light Rain",
+          63: "Rain",
+          65: "Heavy Rain",
+          71: "Light Snow",
+          73: "Snow",
+          75: "Heavy Snow",
+          80: "Light Showers",
+          81: "Showers",
+          82: "Heavy Showers",
+          95: "Thunderstorm"
+        };
+
+        function fetchWeather() {
+          // Update global weather data
+          window.weatherData.lat = lat;
+          window.weatherData.lon = lon;
+
+          var xhr = new XMLHttpRequest();
+          var url = "api.php?type=weather&lat=" + lat + "&lon=" + lon;
+          xhr.open("GET", url, true);
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                try {
+                  var data = JSON.parse(xhr.responseText);
+                  if (data.current_weather) {
+                    var temp = Math.round(data.current_weather.temperature);
+                    tempElement.innerHTML = temp + "\u00B0C";
+                    var code = data.current_weather.weathercode;
+                    descElement.innerHTML = weatherCodes[code] || "Unknown";
+                  }
+                } catch (e) {
+                  // JSON parse error
+                }
+              }
+            }
+          };
+          xhr.send();
+        }
+
+        function geocodeLocation(locationName) {
+          var xhr = new XMLHttpRequest();
+          var url = "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(locationName) + "&count=1&language=en&format=json";
+          xhr.open("GET", url, true);
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                try {
+                  var data = JSON.parse(xhr.responseText);
+                  if (data.results && data.results.length > 0) {
+                    var result = data.results[0];
+                    lat = result.latitude;
+                    lon = result.longitude;
+                    var displayName = result.name;
+                    if (result.country) {
+                      displayName += ", " + result.country;
+                    }
+                    locationElement.innerHTML = displayName;
+                    window.weatherData.locationName = displayName;
+                    fetchWeather();
+                  } else {
+                    locationElement.innerHTML = "Location not found";
+                  }
+                } catch (e) {
+                  locationElement.innerHTML = "Error";
+                }
+              }
+            }
+          };
+          xhr.send();
+        }
+
+        function onLocationSuccess(position) {
+          lat = position.coords.latitude;
+          lon = position.coords.longitude;
+          locationDetected = true;
+          locationElement.innerHTML = "Current Location";
+          window.weatherData.locationName = "Current Location";
+          fetchWeather();
+          dataFetchers.weather = fetchWeather;
+          scheduleDataUpdates();
+        }
+
+        function onLocationError(error) {
+          // Fall back to default location
+          fetchWeather();
+          dataFetchers.weather = fetchWeather;
+          scheduleDataUpdates();
+        }
+
+        function initWeather() {
+          // Check if user has set a custom location
+          if (settings.weatherLocation && settings.weatherLocation.trim() !== '') {
+            geocodeLocation(settings.weatherLocation);
+            dataFetchers.weather = fetchWeather;
+            scheduleDataUpdates();
+          } else {
+            // Try to get current location
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError, {
+                timeout: 10000,
+                maximumAge: 300000
+              });
+            } else {
+              // Geolocation not supported, use default
+              fetchWeather();
+              dataFetchers.weather = fetchWeather;
+              scheduleDataUpdates();
+            }
+          }
+        }
+
+        window.updateWeatherLocation = function() {
+          initWeather();
+        };
+
+        initWeather();
+      })();
+
+      // Pull to refresh
+      (function () {
+        var startY = 0;
+        var currentY = 0;
+        var isPulling = false;
+        var threshold = 80;
+
+        function onTouchStart(e) {
+          if (e.touches.length === 1) {
+            startY = e.touches[0].pageY;
+            isPulling = true;
+          }
+        }
+
+        function onTouchMove(e) {
+          if (!isPulling || e.touches.length !== 1) return;
+
+          currentY = e.touches[0].pageY;
+          var pullDistance = currentY - startY;
+
+          if (pullDistance > 10) {
+            e.preventDefault();
+          }
+        }
+
+        function onTouchEnd(e) {
+          if (!isPulling) return;
+
+          var pullDistance = currentY - startY;
+
+          if (pullDistance > threshold) {
+            window.location.reload();
+          }
+
+          isPulling = false;
+          startY = 0;
+          currentY = 0;
+        }
+
+        document.addEventListener('touchstart', onTouchStart, false);
+        document.addEventListener('touchmove', onTouchMove, false);
+        document.addEventListener('touchend', onTouchEnd, false);
+      })();
+
+      // Slideshow background
+      (function () {
+        var slideshowContainer = document.getElementById('slideshow-background');
+        var currentIndex = 0;
+        var imgElements = [];
+        var slideshowTimer = null;
+
+        // Load photos for the current album
+        function loadPhotos(callback) {
+          if (!settings.album) {
+            callback([]);
+            return;
+          }
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", "api.php?type=album_photos&album=" + settings.album, true);
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+              try {
+                var data = JSON.parse(xhr.responseText);
+                callback(data.photos || []);
+              } catch (e) {
+                callback([]);
+              }
+            }
+          };
+          xhr.send();
+        }
+
+        // Initialize slideshow with photos
+        function initSlideshow(photos) {
+          // Clear existing images
+          slideshowContainer.innerHTML = '';
+          imgElements = [];
+
+          if (photos.length === 0) {
+            currentIndex = 0;
+            return;
+          }
+
+          // Create image elements
+          for (var i = 0; i < photos.length; i++) {
+            var img = document.createElement('img');
+            img.src = photos[i];
+            img.alt = '';
+            slideshowContainer.appendChild(img);
+            imgElements.push(img);
+          }
+
+          // Restore saved index if slideshow is disabled
+          if (settings.slideInterval === 0 && settings.currentSlideIndex !== undefined) {
+            currentIndex = Math.min(settings.currentSlideIndex, imgElements.length - 1);
+          } else {
+            currentIndex = 0;
+          }
+
+          // Show current image
+          if (imgElements.length > 0) {
+            imgElements[currentIndex].className = 'active';
+          }
+
+          // Start slideshow
+          startSlideshow();
+        }
+
+        // Transition to next image
+        function nextSlide() {
+          if (imgElements.length === 0) return;
+
+          // Hide current image
+          imgElements[currentIndex].className = '';
+
+          // Move to next image
+          currentIndex = (currentIndex + 1) % imgElements.length;
+
+          // Show next image
+          imgElements[currentIndex].className = 'active';
+
+          // Save index if slideshow is disabled
+          if (settings.slideInterval === 0) {
+            settings.currentSlideIndex = currentIndex;
+            saveSettings();
+          }
+        }
+
+        // Transition to previous image
+        function prevSlide() {
+          if (imgElements.length === 0) return;
+
+          // Hide current image
+          imgElements[currentIndex].className = '';
+
+          // Move to previous image
+          currentIndex = (currentIndex - 1 + imgElements.length) % imgElements.length;
+
+          // Show previous image
+          imgElements[currentIndex].className = 'active';
+
+          // Save index if slideshow is disabled
+          if (settings.slideInterval === 0) {
+            settings.currentSlideIndex = currentIndex;
+            saveSettings();
+          }
+        }
+
+        // Start or restart slideshow
+        function startSlideshow() {
+          if (slideshowTimer) {
+            clearTimeout(slideshowTimer);
+            slideshowTimer = null;
+          }
+          // Only start if interval > 0 and we have multiple images
+          if (settings.slideInterval > 0 && imgElements.length > 1) {
+            scheduleNextSlide();
+          }
+        }
+
+        // Schedule next slide at aligned time (synced with clock seconds)
+        function scheduleNextSlide() {
+          if (settings.slideInterval <= 0 || imgElements.length <= 1) return;
+
+          var now = new Date();
+          var currentSeconds = now.getSeconds();
+          var intervalSec = settings.slideInterval;
+
+          // Calculate seconds until next aligned time
+          var secondsUntilNext = intervalSec - (currentSeconds % intervalSec);
+          if (secondsUntilNext === 0) {
+            secondsUntilNext = intervalSec;
+          }
+
+          // Adjust for milliseconds to be more precise
+          var msUntilNext = (secondsUntilNext * 1000) - now.getMilliseconds();
+
+          slideshowTimer = setTimeout(function() {
+            nextSlide();
+            scheduleNextSlide();
+          }, msUntilNext);
+        }
+
+        // Reload slideshow (when album changes)
+        function reloadSlideshow() {
+          loadPhotos(function(photos) {
+            initSlideshow(photos);
+          });
+        }
+
+        // Expose functions to update from settings
+        window.updateSlideshowInterval = startSlideshow;
+        window.reloadSlideshow = reloadSlideshow;
+        window.nextSlide = nextSlide;
+        window.prevSlide = prevSlide;
+
+        // Initial load
+        loadPhotos(function(photos) {
+          initSlideshow(photos);
+        });
+
+        // Add click handlers for navigation areas
+        document.getElementById('slide-nav-left').onclick = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          prevSlide();
+          return false;
+        };
+        document.getElementById('slide-nav-right').onclick = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          nextSlide();
+          return false;
+        };
+
+        // Prevent mousedown/touchstart from selecting
+        document.getElementById('slide-nav-left').onmousedown = function(e) {
+          e.preventDefault();
+          return false;
+        };
+        document.getElementById('slide-nav-right').onmousedown = function(e) {
+          e.preventDefault();
+          return false;
+        };
+
+        // Add keyboard support for arrow keys
+        document.addEventListener('keydown', function(e) {
+          if (e.keyCode === 37 || e.key === 'ArrowLeft') {
+            // Left arrow
+            prevSlide();
+          } else if (e.keyCode === 39 || e.key === 'ArrowRight') {
+            // Right arrow
+            nextSlide();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
+

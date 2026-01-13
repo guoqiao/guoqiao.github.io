@@ -1,0 +1,6 @@
+@echo off
+echo Setting up Visual Studio Build Environment...
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+echo Environment ready. Starting build...
+
+pake index.html --icon icon.png --use-local-file --name "NZ-PAYE-Calculator"

@@ -1,0 +1,335 @@
+:root {
+    --primary-color: #3b82f6;
+    --primary-hover: #2563eb;
+    --bg-color: #f3f4f6;
+    --card-bg: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --radius: 0.75rem;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+header {
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+}
+
+header p {
+    color: var(--text-muted);
+}
+
+.upload-area {
+    background: var(--card-bg);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius);
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+    border-color: var(--primary-color);
+    background-color: #eff6ff;
+}
+
+.upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-muted);
+}
+
+.upload-icon {
+    color: var(--primary-color);
+}
+
+.browse-link {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--card-bg);
+    padding: 1rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.hidden {
+    display: none !important;
+}
+
+button {
+    cursor: pointer;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    font-family: inherit;
+    border: none;
+}
+
+.primary-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.primary-btn:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.secondary-btn {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.secondary-btn:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.text-btn {
+    background: none;
+    color: var(--text-muted);
+}
+
+.text-btn:hover {
+    color: #ef4444;
+}
+
+.preview-area {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+}
+
+/* Right Toolbar styling */
+.right-toolbar {
+    width: 32px;
+    background-color: #f3f4f6;
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.toolbar-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: white;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+    background-color: white;
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.toolbar-btn.delete-btn:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.toolbar-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+    border-color: var(--border-color);
+}
+
+/* Card Layout updates */
+.image-card {
+    position: relative;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+    /* Width adjusted to match controls */
+    width: 100%;
+    margin-bottom: 0;
+    user-select: none;
+    display: flex;
+    /* Flex row: LeftToolbar | Wrapper | RightSidebar */
+    flex-direction: row;
+    align-items: stretch;
+    z-index: 1;
+}
+
+.image-wrapper {
+    flex: 1;
+    /* Take remaining width */
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    /* No longer drag reorder by default on image? */
+}
+
+.image-wrapper img {
+    width: 100%;
+    display: block;
+    pointer-events: none;
+    /* Prevent ghost drag of image tag */
+}
+
+/* Trim Handle styling */
+.trim-handle {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 24px;
+    z-index: 100;
+    /* Above everything */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+    /* Text matches border color for better visibility? Or white on red bg? */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    opacity: 0.5;
+    /* Always visible */
+    transition: opacity 0.2s;
+    pointer-events: auto;
+}
+
+.image-card:hover .trim-handle {
+    opacity: 0.8;
+}
+
+.trim-handle:hover {
+    opacity: 1 !important;
+}
+
+.trim-handle-top {
+    top: 0;
+    cursor: s-resize;
+    background: linear-gradient(to bottom, rgba(239, 68, 68, 0.6), transparent);
+    border-top: 2px dashed #ef4444;
+}
+
+.trim-handle-top::after {
+    content: "DRAG DOWN TO TRIM TOP";
+}
+
+.trim-handle-bottom {
+    bottom: 0;
+    cursor: n-resize;
+    background: linear-gradient(to top, rgba(239, 68, 68, 0.6), transparent);
+    border-bottom: 2px dashed #ef4444;
+}
+
+.trim-handle-bottom::after {
+    content: "DRAG UP TO TRIM BOTTOM";
+}
+
+/* Controls overlay for each image */
+.img-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+.image-card:hover .img-controls {
+    opacity: 1;
+}
+
+.icon-btn {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+}
+
+.icon-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+
+
+.image-card.dragging {
+    opacity: 0.5;
+    border: 2px dashed var(--primary-color);
+}
+
+.image-card.drag-over-target {
+    border-top: 3px solid var(--primary-color);
+}
+
+footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-top: 1rem;
+    padding-bottom: 2rem;
+}

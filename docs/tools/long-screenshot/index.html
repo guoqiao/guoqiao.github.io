@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Long Screenshot Merger</title>
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Long Screenshot Merger</h1>
+            <p>Merge multiple screenshots into one long screenshot.</p>
+        </header>
+
+        <main>
+            <div class="upload-area" id="dropZone">
+                <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                <div class="upload-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="upload-icon">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Drag & drop screenshots here, or <span class="browse-link">browse</span></p>
+                </div>
+            </div>
+
+            <div class="controls hidden" id="controls">
+                <button id="addMoreBtn" class="secondary-btn">Add More Images</button>
+                <button id="downloadBtn" class="primary-btn">Download Result</button>
+                <button id="resetBtn" class="text-btn">Reset</button>
+            </div>
+
+            <div class="preview-area" id="previewArea">
+                <!-- Images will be injected here -->
+                <div class="empty-state hidden" id="emptyState">
+                    No images added yet.
+                </div>
+            </div>
+
+            <div class="controls hidden" id="controlsBottom">
+                <button id="addMoreBtnBottom" class="secondary-btn">Add More Images</button>
+                <button id="downloadBtnBottom" class="primary-btn">Download Result</button>
+                <button id="resetBtnBottom" class="text-btn">Reset</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>100% Client-side. Private & Secure.</p>
+        </footer>
+    </div>
+
+    <!-- Using a simple Drag and Drop library for reordering if needed, but going Vanilla first as per plan -->
+    <script src="app.js"></script>
+</body>
+
+</html>
