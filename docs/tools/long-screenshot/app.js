@@ -192,9 +192,15 @@ function render() {
             deleteImage(index);
         });
 
-        // Trim Listeners (Universal)
-        card.querySelector('.trim-handle-top').addEventListener('mousedown', (e) => handleTrimStart(e, index, 'top'));
-        card.querySelector('.trim-handle-bottom').addEventListener('mousedown', (e) => handleTrimStart(e, index, 'bottom'));
+        // Trim Listeners (Universal - supports Mouse and Touch)
+        const trimTopHandle = card.querySelector('.trim-handle-top');
+        const trimBottomHandle = card.querySelector('.trim-handle-bottom');
+
+        trimTopHandle.addEventListener('mousedown', (e) => handleTrimStart(e, index, 'top'));
+        trimTopHandle.addEventListener('touchstart', (e) => handleTrimStart(e, index, 'top'), { passive: false });
+
+        trimBottomHandle.addEventListener('mousedown', (e) => handleTrimStart(e, index, 'bottom'));
+        trimBottomHandle.addEventListener('touchstart', (e) => handleTrimStart(e, index, 'bottom'), { passive: false });
 
         previewArea.appendChild(card);
     });
@@ -302,14 +308,25 @@ let trimStartY = 0;
 let startTrimValue = 0;
 let currentHandle = null;
 
+function getClientY(e) {
+    if (e.touches && e.touches.length > 0) {
+        return e.touches[0].clientY;
+    }
+    return e.clientY;
+}
+
 function handleTrimStart(e, index, type) {
-    e.preventDefault();
+    if (e.type === 'touchstart') {
+        e.preventDefault(); // Prevent scrolling on touch
+    } else {
+        e.preventDefault();
+    }
     e.stopPropagation();
 
     isTrimming = true;
     trimType = type;
     currentTrimIndex = index;
-    trimStartY = e.clientY;
+    trimStartY = getClientY(e);
     currentHandle = e.target;
     currentHandle.classList.add('active');
 
@@ -321,12 +338,18 @@ function handleTrimStart(e, index, type) {
 
     document.addEventListener('mousemove', handleTrimMove);
     document.addEventListener('mouseup', handleTrimEnd);
+    document.addEventListener('touchmove', handleTrimMove, { passive: false });
+    document.addEventListener('touchend', handleTrimEnd);
 }
 
 function handleTrimMove(e) {
     if (!isTrimming) return;
+    if (e.type === 'touchmove') {
+        e.preventDefault(); // Prevent scroll while dragging
+    }
 
-    const deltaY = e.clientY - trimStartY;
+    const currentY = getClientY(e);
+    const deltaY = currentY - trimStartY;
     let newTrim = 0;
 
     const imgObj = state.images[currentTrimIndex];
@@ -374,6 +397,8 @@ function handleTrimEnd(e) {
     document.body.style.cursor = 'default';
     document.removeEventListener('mousemove', handleTrimMove);
     document.removeEventListener('mouseup', handleTrimEnd);
+    document.removeEventListener('touchmove', handleTrimMove);
+    document.removeEventListener('touchend', handleTrimEnd);
 }
 
 // --- Overlap Logic REMOVED ---
@@ -383,9 +408,16 @@ async function generateAndDownload() {
     if (state.images.length === 0) return;
 
     const downloadBtn = document.getElementById('downloadBtn');
+    const downloadBtnBottom = document.getElementById('downloadBtnBottom');
+
+    // UI Loading State
     const originalText = downloadBtn.innerText;
     downloadBtn.innerText = "Generating...";
     downloadBtn.disabled = true;
+    if (downloadBtnBottom) {
+        downloadBtnBottom.innerText = "Generating...";
+        downloadBtnBottom.disabled = true;
+    }
 
     try {
         const loadedImages = await Promise.all(state.images.map(imgObj => loadImageBlob(imgObj.src)));
@@ -462,6 +494,10 @@ async function generateAndDownload() {
     } finally {
         downloadBtn.innerText = originalText;
         downloadBtn.disabled = false;
+        if (downloadBtnBottom) {
+            downloadBtnBottom.innerText = originalText;
+            downloadBtnBottom.disabled = false;
+        }
     }
 }
 
