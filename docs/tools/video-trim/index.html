@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FFmpeg Trim Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #111115;
+    --surface2: #1a1a20;
+    --border: #2a2a35;
+    --accent: #f0c040;
+    --accent2: #e07830;
+    --trim-start: #40c8f0;
+    --trim-end: #f04060;
+    --text: #e8e8f0;
+    --text-dim: #7070a0;
+    --radius: 8px;
+    --handle-w: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px;
+    gap: 0;
+  }
+
+  header {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+  }
+
+  header span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .drop-zone {
+    width: 100%;
+    max-width: 900px;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface);
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: #16160e;
+  }
+
+  .drop-zone .icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .drop-zone p {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+
+  .drop-zone strong {
+    color: var(--accent);
+  }
+
+  #file-input { display: none; }
+
+  /* Main editor */
+  .editor {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    max-width: 900px;
+    gap: 20px;
+  }
+
+  .editor.visible { display: flex; }
+
+  /* Video container */
+  .video-wrap {
+    position: relative;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    width: 100%;
+  }
+
+  .video-wrap video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .video-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .play-btn {
+    width: 60px;
+    height: 60px;
+    background: rgba(0,0,0,0.55);
+    border: 2px solid rgba(255,255,255,0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+  }
+
+  .play-btn:hover { background: rgba(0,0,0,0.8); transform: scale(1.08); }
+  .play-btn svg { width: 24px; height: 24px; fill: #fff; margin-left: 3px; }
+  .play-btn.playing svg { margin-left: 0; }
+
+  /* Time indicator */
+  .time-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    padding: 0 2px;
+  }
+
+  .time-bar .current { color: var(--text); font-weight: 500; }
+
+  /* === TRIM TIMELINE === */
+  .timeline-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .timeline-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* Thumbnail strip + slider combo */
+  .timeline-outer {
+    position: relative;
+    height: 60px;
+    border-radius: 6px;
+    overflow: visible;
+    user-select: none;
+  }
+
+  /* Thumbnail strip */
+  .thumb-strip {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    background: var(--surface2);
+  }
+
+  .thumb-strip canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Dark overlay outside trim range */
+  .trim-overlay-left,
+  .trim-overlay-right {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    pointer-events: none;
+    transition: none;
+  }
+
+  .trim-overlay-left { left: 0; border-radius: 6px 0 0 6px; }
+  .trim-overlay-right { right: 0; border-radius: 0 6px 6px 0; }
+
+  /* Trim bracket highlight */
+  .trim-bracket {
+    position: absolute;
+    top: 0; bottom: 0;
+    border-top: 3px solid var(--accent);
+    border-bottom: 3px solid var(--accent);
+    pointer-events: none;
+  }
+
+  /* Handles */
+  .handle {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: var(--handle-w);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ew-resize;
+    z-index: 10;
+    border-radius: 4px;
+    transition: filter 0.1s;
+  }
+
+  .handle-start {
+    left: 0;
+    background: var(--trim-start);
+    border-radius: 5px 2px 2px 5px;
+    transform: translateX(-50%);
+  }
+
+  .handle-end {
+    right: 0;
+    background: var(--trim-end);
+    border-radius: 2px 5px 5px 2px;
+    transform: translateX(50%);
+  }
+
+  .handle:hover { filter: brightness(1.25); }
+
+  .handle-grip {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .handle-grip span {
+    display: block;
+    width: 2px;
+    height: 12px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 1px;
+  }
+
+  /* Playhead */
+  .playhead {
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 20;
+    transform: translateX(-50%);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .playhead::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  /* Click scrub area */
+  .scrub-zone {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    z-index: 5;
+  }
+
+  /* Controls row */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .trim-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .trim-field label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .trim-field label.start-lbl { color: var(--trim-start); }
+  .trim-field label.end-lbl { color: var(--trim-end); }
+
+  .trim-field input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    width: 100%;
+    text-align: right;
+  }
+
+  .jump-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .jump-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .duration-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .duration-badge strong { color: var(--accent); }
+
+  /* Command output */
+  .cmd-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cmd-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .cmd-header span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .copy-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 5px;
+    padding: 6px 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.5px;
+  }
+
+  .copy-btn:hover { opacity: 0.85; transform: scale(1.03); }
+  .copy-btn.copied { background: #40c060; }
+
+  .cmd-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .cmd-box .kw { color: var(--accent); }
+  .cmd-box .flag { color: var(--trim-start); }
+  .cmd-box .val { color: #a0d890; }
+  .cmd-box .io { color: var(--accent2); }
+
+  /* Options */
+  .options-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .option-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    user-select: none;
+  }
+
+  .option-chip input { accent-color: var(--accent); }
+  .option-chip:hover { border-color: var(--accent); color: var(--text); }
+
+  /* File name bar */
+  .file-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  .file-bar .fname { color: var(--accent2); font-weight: 500; }
+
+  .change-file-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    cursor: pointer;
+    margin-left: auto;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .change-file-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Timeline tick marks */
+  .tick-row {
+    position: relative;
+    height: 18px;
+    pointer-events: none;
+    margin: 0 2px;
+  }
+
+  .tick-row canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Tooltip near handles */
+  .time-tooltip {
+    position: absolute;
+    top: -28px;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 30;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  .handle:hover .time-tooltip,
+  .handle.dragging .time-tooltip { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ FFmpeg Trim</h1>
+  <span>VIDEO CUT TOOL</span>
+</header>
+
+<!-- Drop zone -->
+<div class="drop-zone" id="drop-zone">
+  <span class="icon">🎬</span>
+  <p><strong>Drop a video file here</strong></p>
+  <p>or click to browse &mdash; MP4, MOV, MKV, WebM…</p>
+</div>
+<input type="file" id="file-input" accept="video/*">
+
+<!-- Editor -->
+<div class="editor" id="editor">
+
+  <!-- File name bar -->
+  <div class="file-bar">
+    <span>📁</span>
+    <span class="fname" id="fname-display">video.mp4</span>
+    <button class="change-file-btn" id="change-file-btn">Change file</button>
+  </div>
+
+  <!-- Video -->
+  <div class="video-wrap">
+    <video id="video" preload="metadata"></video>
+    <div class="video-overlay">
+      <button class="play-btn" id="play-btn" title="Play/Pause">
+        <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Time bar -->
+  <div class="time-bar">
+    <span class="current" id="current-time">0:00.000</span>
+    <span id="total-time">0:00.000</span>
+  </div>
+
+  <!-- Timeline section -->
+  <div class="timeline-section">
+    <div class="timeline-label">Trim Range</div>
+
+    <!-- Thumbnail + trim handles -->
+    <div class="timeline-outer" id="timeline-outer">
+      <div class="thumb-strip" id="thumb-strip">
+        <canvas id="thumb-canvas"></canvas>
+      </div>
+      <div class="trim-overlay-left" id="overlay-left"></div>
+      <div class="trim-overlay-right" id="overlay-right"></div>
+      <div class="trim-bracket" id="trim-bracket"></div>
+
+      <!-- Scrub zone (behind handles) -->
+      <div class="scrub-zone" id="scrub-zone"></div>
+
+      <!-- Start handle -->
+      <div class="handle handle-start" id="handle-start">
+        <div class="handle-grip"><span></span><span></span></div>
+        <div class="time-tooltip" id="tooltip-start">0:00.0</div>
+      </div>
+
+      <!-- End handle -->
+      <div class="handle handle-end" id="handle-end">
+        <div class="handle-grip"><span></span><span></span></div>
+        <div class="time-tooltip" id="tooltip-end">0:00.0</div>
+      </div>
+
+      <!-- Playhead -->
+      <div class="playhead" id="playhead"></div>
+    </div>
+
+    <!-- Tick marks -->
+    <div class="tick-row" id="tick-row">
+      <canvas id="tick-canvas"></canvas>
+    </div>
+
+    <!-- Controls row -->
+    <div class="controls-row">
+      <div class="trim-field">
+        <label class="start-lbl">▶ START</label>
+        <input type="text" id="start-input" value="0:00.000">
+        <button class="jump-btn" id="jump-start">jump</button>
+      </div>
+      <div class="trim-field">
+        <label class="end-lbl">■ END</label>
+        <input type="text" id="end-input" value="0:00.000">
+        <button class="jump-btn" id="jump-end">jump</button>
+      </div>
+      <div class="duration-badge">clip: <strong id="clip-dur">0:00.0</strong></div>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="timeline-section">
+    <div class="timeline-label">Output Options</div>
+    <div class="options-row">
+      <label class="option-chip">
+        <input type="checkbox" id="opt-copy" checked> <code>-c copy</code> (fast, no re-encode)
+      </label>
+      <label class="option-chip">
+        <input type="checkbox" id="opt-avoid-neg"> <code>-avoid_negative_ts 1</code>
+      </label>
+      <label class="option-chip">
+        <input type="checkbox" id="opt-movflags"> <code>-movflags +faststart</code>
+      </label>
+    </div>
+    <div class="options-row" style="margin-top:4px">
+      <div class="trim-field" style="max-width:280px">
+        <label style="color:var(--text-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:0.72rem">OUT FILE</label>
+        <input type="text" id="out-filename" value="output.mp4">
+      </div>
+    </div>
+  </div>
+
+  <!-- Command output -->
+  <div class="cmd-section">
+    <div class="cmd-header">
+      <span>Generated Command</span>
+      <button class="copy-btn" id="copy-btn">Copy</button>
+    </div>
+    <div class="cmd-box" id="cmd-box">—</div>
+  </div>
+
+</div>
+
+<script>
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const editor = document.getElementById('editor');
+const video = document.getElementById('video');
+const playBtn = document.getElementById('play-btn');
+const playIcon = document.getElementById('play-icon');
+const currentTimeEl = document.getElementById('current-time');
+const totalTimeEl = document.getElementById('total-time');
+const timelineOuter = document.getElementById('timeline-outer');
+const handleStart = document.getElementById('handle-start');
+const handleEnd = document.getElementById('handle-end');
+const playhead = document.getElementById('playhead');
+const overlayLeft = document.getElementById('overlay-left');
+const overlayRight = document.getElementById('overlay-right');
+const trimBracket = document.getElementById('trim-bracket');
+const scrubZone = document.getElementById('scrub-zone');
+const startInput = document.getElementById('start-input');
+const endInput = document.getElementById('end-input');
+const clipDur = document.getElementById('clip-dur');
+const cmdBox = document.getElementById('cmd-box');
+const copyBtn = document.getElementById('copy-btn');
+const tooltipStart = document.getElementById('tooltip-start');
+const tooltipEnd = document.getElementById('tooltip-end');
+const thumbCanvas = document.getElementById('thumb-canvas');
+const tickCanvas = document.getElementById('tick-canvas');
+const jumpStart = document.getElementById('jump-start');
+const jumpEnd = document.getElementById('jump-end');
+const fnameDisplay = document.getElementById('fname-display');
+const changeFileBtn = document.getElementById('change-file-btn');
+const outFilename = document.getElementById('out-filename');
+
+let duration = 0;
+let trimStart = 0; // seconds
+let trimEnd = 0;   // seconds
+let fileName = 'input.mp4';
+let thumbsGenerated = false;
+
+// ---- File loading ----
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => loadFile(fileInput.files[0]));
+changeFileBtn.addEventListener('click', () => fileInput.click());
+
+function loadFile(file) {
+  if (!file || !file.type.startsWith('video/')) return;
+  fileName = file.name;
+  fnameDisplay.textContent = fileName;
+  // default output name
+  const base = fileName.replace(/\.[^.]+$/, '');
+  outFilename.value = base + '_trimmed' + (fileName.match(/\.[^.]+$/) || ['.mp4'])[0];
+
+  const url = URL.createObjectURL(file);
+  video.src = url;
+  video.load();
+  dropZone.style.display = 'none';
+  editor.classList.add('visible');
+}
+
+video.addEventListener('loadedmetadata', () => {
+  duration = video.duration;
+  trimStart = 0;
+  trimEnd = duration;
+  totalTimeEl.textContent = fmtTime(duration);
+  updateUI();
+  generateThumbs();
+  drawTicks();
+});
+
+video.addEventListener('timeupdate', () => {
+  currentTimeEl.textContent = fmtTime(video.currentTime);
+  updatePlayhead();
+});
+
+video.addEventListener('ended', () => {
+  setPlayIcon(false);
+  // loop within trim region
+  video.currentTime = trimStart;
+});
+
+// ---- Play/Pause ----
+playBtn.addEventListener('click', togglePlay);
+video.addEventListener('play', () => setPlayIcon(true));
+video.addEventListener('pause', () => setPlayIcon(false));
+
+function togglePlay() {
+  if (video.paused) {
+    if (video.currentTime >= trimEnd - 0.05) video.currentTime = trimStart;
+    video.play();
+  } else {
+    video.pause();
+  }
+}
+
+function setPlayIcon(playing) {
+  playBtn.classList.toggle('playing', playing);
+  if (playing) {
+    playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  } else {
+    playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  }
+}
+
+// keep video within trim range while playing
+video.addEventListener('timeupdate', () => {
+  if (!video.paused && video.currentTime > trimEnd) {
+    video.pause();
+    video.currentTime = trimEnd;
+  }
+});
+
+// ---- Scrub on timeline click ----
+scrubZone.addEventListener('mousedown', e => {
+  const pct = getPct(e);
+  video.currentTime = pct * duration;
+  updatePlayhead();
+  startScrubDrag();
+});
+
+function startScrubDrag() {
+  const onMove = e => {
+    const pct = getPct(e);
+    video.currentTime = Math.max(0, Math.min(1, pct)) * duration;
+    updatePlayhead();
+  };
+  const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function getPct(e) {
+  const rect = timelineOuter.getBoundingClientRect();
+  return (e.clientX - rect.left) / rect.width;
+}
+
+// ---- Handle dragging ----
+setupHandle(handleStart, 'start');
+setupHandle(handleEnd, 'end');
+
+function setupHandle(el, which) {
+  el.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    e.preventDefault();
+    el.classList.add('dragging');
+    const onMove = e => {
+      const pct = Math.max(0, Math.min(1, getPct(e)));
+      const t = pct * duration;
+      if (which === 'start') {
+        trimStart = Math.min(t, trimEnd - 0.1);
+        video.currentTime = trimStart;
+      } else {
+        trimEnd = Math.max(t, trimStart + 0.1);
+        video.currentTime = trimEnd;
+      }
+      updateUI();
+    };
+    const onUp = () => {
+      el.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  // Touch support
+  el.addEventListener('touchstart', e => {
+    e.stopPropagation();
+    el.classList.add('dragging');
+    const onMove = e => {
+      const touch = e.touches[0];
+      const pct = Math.max(0, Math.min(1, getPctFromX(touch.clientX)));
+      const t = pct * duration;
+      if (which === 'start') {
+        trimStart = Math.min(t, trimEnd - 0.1);
+        video.currentTime = trimStart;
+      } else {
+        trimEnd = Math.max(t, trimStart + 0.1);
+        video.currentTime = trimEnd;
+      }
+      updateUI();
+    };
+    const onUp = () => {
+      el.classList.remove('dragging');
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+    };
+    document.addEventListener('touchmove', onMove, { passive: true });
+    document.addEventListener('touchend', onUp);
+  }, { passive: true });
+}
+
+function getPctFromX(x) {
+  const rect = timelineOuter.getBoundingClientRect();
+  return (x - rect.left) / rect.width;
+}
+
+// ---- UI update ----
+function updateUI() {
+  const w = timelineOuter.offsetWidth;
+  const pStart = trimStart / duration;
+  const pEnd = trimEnd / duration;
+  const xStart = pStart * w;
+  const xEnd = pEnd * w;
+
+  overlayLeft.style.width = xStart + 'px';
+  overlayRight.style.width = (w - xEnd) + 'px';
+  trimBracket.style.left = xStart + 'px';
+  trimBracket.style.right = (w - xEnd) + 'px';
+
+  handleStart.style.left = xStart + 'px';
+  handleEnd.style.left = xEnd + 'px';
+
+  tooltipStart.textContent = fmtTime(trimStart);
+  tooltipEnd.textContent = fmtTime(trimEnd);
+
+  startInput.value = fmtTime(trimStart);
+  endInput.value = fmtTime(trimEnd);
+
+  const clipLen = trimEnd - trimStart;
+  clipDur.textContent = fmtTime(clipLen);
+
+  updatePlayhead();
+  buildCommand();
+}
+
+function updatePlayhead() {
+  if (!duration) return;
+  const w = timelineOuter.offsetWidth;
+  const pct = video.currentTime / duration;
+  playhead.style.left = (pct * w) + 'px';
+}
+
+// ---- Input fields ----
+startInput.addEventListener('change', () => {
+  const t = parseTime(startInput.value);
+  if (!isNaN(t)) { trimStart = Math.max(0, Math.min(t, trimEnd - 0.1)); }
+  updateUI();
+});
+endInput.addEventListener('change', () => {
+  const t = parseTime(endInput.value);
+  if (!isNaN(t)) { trimEnd = Math.min(duration, Math.max(t, trimStart + 0.1)); }
+  updateUI();
+});
+
+jumpStart.addEventListener('click', () => { video.currentTime = trimStart; });
+jumpEnd.addEventListener('click', () => { video.currentTime = trimEnd; });
+
+// ---- Options / command ----
+['opt-copy','opt-avoid-neg','opt-movflags'].forEach(id => {
+  document.getElementById(id).addEventListener('change', buildCommand);
+});
+outFilename.addEventListener('input', buildCommand);
+
+function buildCommand() {
+  if (!duration) return;
+  const ss = trimStart.toFixed(3);
+  const to = trimEnd.toFixed(3);
+  const out = outFilename.value || 'output.mp4';
+  const useCopy = document.getElementById('opt-copy').checked;
+  const useAvoid = document.getElementById('opt-avoid-neg').checked;
+  const useMovflags = document.getElementById('opt-movflags').checked;
+
+  let flags = '';
+  if (useCopy) flags += ' <span class="flag">-c</span> <span class="val">copy</span>';
+  if (useAvoid) flags += ' <span class="flag">-avoid_negative_ts</span> <span class="val">1</span>';
+  if (useMovflags) flags += ' <span class="flag">-movflags</span> <span class="val">+faststart</span>';
+
+  cmdBox.innerHTML = `<span class="kw">ffmpeg</span> <span class="flag">-i</span> <span class="io">${escHtml(fileName)}</span> <span class="flag">-ss</span> <span class="val">${ss}</span> <span class="flag">-to</span> <span class="val">${to}</span>${flags} <span class="io">${escHtml(out)}</span>`;
+}
+
+copyBtn.addEventListener('click', () => {
+  const ss = trimStart.toFixed(3);
+  const to = trimEnd.toFixed(3);
+  const out = outFilename.value || 'output.mp4';
+  const useCopy = document.getElementById('opt-copy').checked;
+  const useAvoid = document.getElementById('opt-avoid-neg').checked;
+  const useMovflags = document.getElementById('opt-movflags').checked;
+
+  let cmd = `ffmpeg -i ${fileName} -ss ${ss} -to ${to}`;
+  if (useCopy) cmd += ' -c copy';
+  if (useAvoid) cmd += ' -avoid_negative_ts 1';
+  if (useMovflags) cmd += ' -movflags +faststart';
+  cmd += ` ${out}`;
+
+  navigator.clipboard.writeText(cmd).then(() => {
+    copyBtn.textContent = '✓ Copied!';
+    copyBtn.classList.add('copied');
+    setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1800);
+  });
+});
+
+// ---- Thumbnails ----
+async function generateThumbs() {
+  const canvas = thumbCanvas;
+  const strip = document.getElementById('thumb-strip');
+  const W = strip.offsetWidth || 860;
+  const H = strip.offsetHeight || 60;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const count = Math.ceil(W / H); // roughly square thumbs
+  const offscreen = document.createElement('canvas');
+  offscreen.width = 160; offscreen.height = 90;
+  const oc = offscreen.getContext('2d');
+
+  for (let i = 0; i < count; i++) {
+    const t = (i / (count - 1)) * duration;
+    await seekAndDraw(t, oc, offscreen, ctx, i, W, H, count);
+  }
+}
+
+function seekAndDraw(t, oc, offscreen, ctx, i, W, H, count) {
+  return new Promise(resolve => {
+    const v2 = document.createElement('video');
+    v2.src = video.src;
+    v2.currentTime = t;
+    v2.muted = true;
+    v2.addEventListener('seeked', () => {
+      oc.drawImage(v2, 0, 0, 160, 90);
+      const thumbW = W / count;
+      ctx.drawImage(offscreen, 0, 0, 160, 90, i * thumbW, 0, thumbW, H);
+      resolve();
+    }, { once: true });
+  });
+}
+
+// ---- Tick marks ----
+function drawTicks() {
+  const canvas = tickCanvas;
+  const row = document.getElementById('tick-row');
+  const W = row.offsetWidth || 860;
+  const H = 18;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#505070';
+  ctx.font = '9px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+
+  const intervals = getTickInterval(duration);
+  for (let t = 0; t <= duration; t += intervals.minor) {
+    const x = (t / duration) * W;
+    const isMajor = Math.abs(t % intervals.major) < intervals.minor * 0.5;
+    ctx.fillStyle = isMajor ? '#a0a0c0' : '#404060';
+    ctx.fillRect(x - 0.5, 0, 1, isMajor ? 8 : 4);
+    if (isMajor) {
+      ctx.fillStyle = '#808098';
+      ctx.fillText(fmtTimeTick(t), x, 17);
+    }
+  }
+}
+
+function getTickInterval(dur) {
+  if (dur <= 30) return { major: 5, minor: 1 };
+  if (dur <= 120) return { major: 15, minor: 5 };
+  if (dur <= 600) return { major: 60, minor: 10 };
+  if (dur <= 3600) return { major: 300, minor: 60 };
+  return { major: 600, minor: 120 };
+}
+
+// ---- Helpers ----
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toFixed(3).padStart(6, '0')}`;
+}
+
+function fmtTimeTick(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function parseTime(str) {
+  str = str.trim();
+  // m:ss.mmm or m:ss or just seconds
+  const match = str.match(/^(\d+):(\d+(?:\.\d*)?)$/);
+  if (match) return parseInt(match[1]) * 60 + parseFloat(match[2]);
+  return parseFloat(str);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Resize observer to re-layout on size change
+const ro = new ResizeObserver(() => {
+  if (duration) { updateUI(); drawTicks(); }
+});
+ro.observe(timelineOuter);
+</script>
+</body>
+</html>
