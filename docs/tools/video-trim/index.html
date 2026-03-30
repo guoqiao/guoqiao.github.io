@@ -632,12 +632,7 @@
         <input type="checkbox" id="opt-movflags"> <code>-movflags +faststart</code>
       </label>
     </div>
-    <div class="options-row" style="margin-top:4px">
-      <div class="trim-field" style="max-width:280px">
-        <label style="color:var(--text-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:0.72rem">OUT FILE</label>
-        <input type="text" id="out-filename" value="output.mp4">
-      </div>
-    </div>
+
   </div>
 
   <!-- Command output -->
@@ -681,7 +676,7 @@ const jumpStart = document.getElementById('jump-start');
 const jumpEnd = document.getElementById('jump-end');
 const fnameDisplay = document.getElementById('fname-display');
 const changeFileBtn = document.getElementById('change-file-btn');
-const outFilename = document.getElementById('out-filename');
+
 
 let duration = 0;
 let trimStart = 0; // seconds
@@ -702,8 +697,7 @@ function loadFile(file) {
   fileName = file.name;
   fnameDisplay.textContent = fileName;
   // default output name
-  const base = fileName.replace(/\.[^.]+$/, '');
-  outFilename.value = base + '_trimmed' + (fileName.match(/\.[^.]+$/) || ['.mp4'])[0];
+
 
   const url = URL.createObjectURL(file);
   video.src = url;
@@ -905,13 +899,12 @@ jumpEnd.addEventListener('click', () => { video.currentTime = trimEnd; });
 ['opt-copy','opt-avoid-neg','opt-movflags'].forEach(id => {
   document.getElementById(id).addEventListener('change', buildCommand);
 });
-outFilename.addEventListener('input', buildCommand);
+
 
 function buildCommand() {
   if (!duration) return;
   const ss = trimStart.toFixed(3);
   const to = trimEnd.toFixed(3);
-  const out = outFilename.value || 'output.mp4';
   const useCopy = document.getElementById('opt-copy').checked;
   const useAvoid = document.getElementById('opt-avoid-neg').checked;
   const useMovflags = document.getElementById('opt-movflags').checked;
@@ -921,22 +914,21 @@ function buildCommand() {
   if (useAvoid) flags += ' <span class="flag">-avoid_negative_ts</span> <span class="val">1</span>';
   if (useMovflags) flags += ' <span class="flag">-movflags</span> <span class="val">+faststart</span>';
 
-  cmdBox.innerHTML = `<span class="kw">ffmpeg</span> <span class="flag">-i</span> <span class="io">${escHtml(fileName)}</span> <span class="flag">-ss</span> <span class="val">${ss}</span> <span class="flag">-to</span> <span class="val">${to}</span>${flags} <span class="io">${escHtml(out)}</span>`;
+  cmdBox.innerHTML = `<span class="kw">ffmpeg</span> <span class="flag">-i</span> <span class="io">"${escHtml(fileName)}"</span> <span class="flag">-ss</span> <span class="val">${ss}</span> <span class="flag">-to</span> <span class="val">${to}</span>${flags} <span class="io">out.mp4</span>`;
 }
 
 copyBtn.addEventListener('click', () => {
   const ss = trimStart.toFixed(3);
   const to = trimEnd.toFixed(3);
-  const out = outFilename.value || 'output.mp4';
   const useCopy = document.getElementById('opt-copy').checked;
   const useAvoid = document.getElementById('opt-avoid-neg').checked;
   const useMovflags = document.getElementById('opt-movflags').checked;
 
-  let cmd = `ffmpeg -i ${fileName} -ss ${ss} -to ${to}`;
+  let cmd = `ffmpeg -i "${fileName}" -ss ${ss} -to ${to}`;
   if (useCopy) cmd += ' -c copy';
   if (useAvoid) cmd += ' -avoid_negative_ts 1';
   if (useMovflags) cmd += ' -movflags +faststart';
-  cmd += ` ${out}`;
+  cmd += ' out.mp4';
 
   navigator.clipboard.writeText(cmd).then(() => {
     copyBtn.textContent = '✓ Copied!';
